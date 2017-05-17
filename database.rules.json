@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "word":{
+      ".read": "auth != null",
+    	".write": false,      
+    },
+    "wordBank":{
+      ".read": "auth != null",
+    	".write": false,      
+    },
+    "users": {
+      "$uid": {
+        ".write": "$uid === auth.uid"
+      }
+    }      
+  }
+}
