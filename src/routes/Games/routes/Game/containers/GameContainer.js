@@ -94,13 +94,9 @@ export default class GameContainer extends Component {
     return(
       <div style={{ margin: '0 auto' }} >
         <h2>{currentGame.name}</h2>
-
-        <div style={{display:"flex"}}>
+        <div style={{position:"fixed",right:0,top:0,width:300,bottom:120,display:"flex",flexWrap:"wrap",alignItems:"flex-end",alignContent:"flex-end"}}>
           {players}       
         </div>
-
-        <p>Letters: {this.state.keyword}</p>
-        <p>Guess: {this.state.guess}</p>
         <div style={styles.wordColumn}>
           {
             !isEmpty(currentGame.bank) && Object.keys(currentGame.bank)
@@ -125,10 +121,23 @@ export default class GameContainer extends Component {
                   )
                 )
               }
-              {key > 0 && currentGame.bank[key].word.length !== currentGame.bank[key - 1].word.length && (<br/>)}
               </div>
             ))
           }      
+        </div>
+        <div style={{position:"fixed",right:0,bottom:60,width:300,height:60,textAlign:"left"}}>
+          {
+            this.state.guess.split('').map((letter, index) => 
+              (<span style={{left:index*50,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
+            )
+          }
+        </div>
+        <div style={{position:"fixed",right:0,bottom:0,width:300,height:60,textAlign:"left"}}>
+          {
+            this.state.keyword.split('').map((letter, index) => 
+              (<span style={{left:index*50,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
+            )
+          }
         </div>
       </div>
     )
@@ -280,8 +289,14 @@ const styles = {
     flexDirection:"column",
     flexWrap:"wrap",
     justifyContent:"flex-start",
-    height:"60vh",
+    height:"calc(100vh - 80x)",
     alignItems:"flex-start",
+    position:"fixed",
+    top:100,
+    left:0,
+    bottom:0,
+    right:300,
+    padding:"0 20px"
   },
   wordContainer:{
     display:"flex",

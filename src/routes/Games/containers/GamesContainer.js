@@ -14,16 +14,16 @@ import {
 import { GAMES_PATH } from 'constants'
 import { UserIsAuthenticated } from 'utils/router'
 import LoadingSpinner from 'components/LoadingSpinner'
-import { showNotification } from '../routes/Game/modules/game'
+// import { showNotification } from '../routes/Game/modules/game'
 
 const populates = [
   { child: 'players', root: 'users', keyProp: 'uid' },
   { child: 'createdBy', root: 'users', keyProp: 'uid' },
 ]
 
-const mapDispatchToProps = {
-  showNotification
-}
+// const mapDispatchToProps = {
+//   showNotification
+// }
 
 @UserIsAuthenticated
 @firebaseConnect([
@@ -39,7 +39,7 @@ const mapDispatchToProps = {
     // notification: state.notification,
     // showNotification
   }),
-  mapDispatchToProps
+  // mapDispatchToProps
 )
 @reduxForm({ form:'newGameForm' })
 export default class Games extends Component {
@@ -51,7 +51,8 @@ export default class Games extends Component {
     games: PropTypes.object,
     firebase: PropTypes.object,
     auth: PropTypes.object,
-    children: PropTypes.object
+    children: PropTypes.object,
+    gamePlayers: PropTypes.object
   }
 
   newSubmit = (newGame) => {
@@ -93,14 +94,14 @@ export default class Games extends Component {
     }
 
     const gameList = isEmpty(games) ? 'No Games' : Object.keys(games).map(key =>
-       <div key={key} style={{padding:10,background:"#e6e6e6",margin:5}}>
-          <h3 style={{marginTop:0}}>{games[key].name}</h3>
-          <p style={{marginBottom:0}}>
-            <img src={games[key].createdBy.avatarUrl} style={{width:40,height:'auto'}}/>&nbsp;
-            Owner: {games[key].createdBy.displayName}&nbsp;
-            <Link to={GAMES_PATH+'/'+key} >Join Game</Link>
-          </p>
-       </div>
+      <div key={key} style={{padding:10,background:"#e6e6e6",margin:5}}>
+        <h3 style={{marginTop:0}}>{games[key].name}</h3>
+        <p style={{marginBottom:0}}>
+          <img src={games[key].createdBy.avatarUrl} style={{width:40,height:'auto'}}/>&nbsp;
+          Owner: {games[key].createdBy.displayName}&nbsp;
+          <Link to={GAMES_PATH+'/'+key} >Join Game</Link>
+        </p>
+      </div>
     )
 
     return (

@@ -40,18 +40,20 @@ export default class Player extends Component {
     const notification = !isEmpty(playerGame.notification) && playerGame.notification.text !== '' &&
       playerGame.notification.text
     return (
-      <div key={id} style={{ width: "33%", textAlign:"center", }} >
-        <img src={ profile.avatarUrl } style={{width:80,height:"auto",borderRadius:40,border:`4px solid ${playerGame.color}`}}/>
-        <h3>{ profile.displayName }</h3>
-        <h3>{ !isEmpty(playerGame) ? playerGame.score : 'Loading Score...' }</h3>
-        <div style={{color:playerGame.color,fontWeight:"bold"}}>
-          <AnimateOnChange
-            baseClassName="notification"
-            animationClassName="notification-animation"
-            animate={this.state.animate}>
-            { notification }
-          </AnimateOnChange>
+      <div key={id} style={{textAlign:"right",display:"flex",width:"100%",marginBottom:20}} >
+        <div style={{flex:1}}>
+          <h3>{ profile.displayName }</h3>
+          <h3>{ !isEmpty(playerGame) ? playerGame.score : 'Loading Score...' }</h3>
+          <div style={{color:playerGame.color,fontWeight:"bold",position:"relative"}}>
+            <AnimateOnChange
+              baseClassName="notification"
+              animationClassName="notification-animation"
+              animate={this.state.animate}>
+              { notification }
+            </AnimateOnChange>
+          </div>
         </div>
+        <img src={ profile.avatarUrl } style={{width:80,height:80,borderRadius:10,border:`4px solid ${playerGame.color}`,marginLeft:20,marginRight:10}}/>
       </div>
     )
   }

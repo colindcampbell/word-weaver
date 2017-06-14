@@ -1,8 +1,12 @@
 .notification{
-	font-size:14px;
+	font-size:20px;
 	display: block;
 	opacity: 0;
-	transform: scale(.9);
+	transform: scale(.8);
+  position: absolute;
+  bottom: -15px;
+  right: 0;
+  white-space: nowrap;
 }
 .notification-animation{
   animation: notification-zoom-out 800ms ease
@@ -11,18 +15,18 @@
 @keyframes notification-zoom-out{
   from {
     opacity:0;
-    transform:scale(.9)
+    transform:scale(.8)
   }
   10% {
     opacity:1;
-    transform:scale(1.3)
+    transform:scale(1)
   }
   90%{
   	opacity:1;
-  	transform:scale(1.3)
+  	transform:scale(1)
   }
   to {
     opacity: 0;
-    transform: scale(.9)
+    transform: scale(.8)
   }
 }

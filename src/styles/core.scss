@@ -1,21 +1,42 @@
-@import 'base';
-@import '~normalize.css/normalize';
-
 // Some best-practice CSS that's useful for most apps
 // Just remove them if they're not what you want
-html {
-  box-sizing: border-box;
-}
+:global {
+  // @import 'base';
+  // @import 'device-sizes';
+  // @import 'standard-classes';
+  @import '~normalize.css/normalize';
+  @import url(https://fonts.googleapis.com/css?family=Gudea:400,700);
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
+  // Some best-practice CSS that's useful for most apps
+  // Just remove them if they're not what you want
+  html {
+    box-sizing: border-box;
+  }
 
-*,
-*:before,
-*:after {
-  box-sizing: inherit;
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #eeeeee;
+    font-family: 'Gudea', 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  a {
+    text-decoration: none !important;
+    &:visited {
+      text-decoration: none;
+      color: inherit;
+    }
+  }
+  *,
+  *:before,
+  *:after {
+    box-sizing: inherit;
+  }
+  [type=button]{
+    -webkit-appearance: none !important;
+  }
+  h1,h2,h3,h4,h5,h6{
+    margin:0 0 10px
+  }
 }

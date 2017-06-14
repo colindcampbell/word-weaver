@@ -38,7 +38,6 @@ export default class Header extends Component {
     const accountExists = isLoaded(account) && !isEmpty(account) 
     return(
       <div>
-        <h1>Word Weaver</h1>
         <IndexLink to='/' activeClassName='route--active'>
           Home
         </IndexLink>
