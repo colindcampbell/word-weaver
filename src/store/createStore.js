@@ -1,6 +1,10 @@
 import { applyMiddleware, compose, createStore } from 'redux'
 import thunk from 'redux-thunk'
 import { browserHistory } from 'react-router'
+
+import { reactReduxFirebase, getFirebase } from 'react-redux-firebase'
+import { firebase as fbConfig, reduxFirebase as reduxConfig } from '../config'
+
 import makeRootReducer from './reducers'
 import { updateLocation } from './location'
 
@@ -8,7 +12,10 @@ export default (initialState = {}) => {
   // ======================================================
   // Middleware Configuration
   // ======================================================
-  const middleware = [thunk]
+  const middleware = [
+    thunk.withExtraArgument(getFirebase)
+    // This is where you add other middleware like redux-observable
+  ]
 
   // ======================================================
   // Store Enhancers
@@ -18,9 +25,9 @@ export default (initialState = {}) => {
   let composeEnhancers = compose
 
   if (__DEV__) {
-    const composeWithDevToolsExtension = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
-    if (typeof composeWithDevToolsExtension === 'function') {
-      composeEnhancers = composeWithDevToolsExtension
+    const devToolsExtension = window.devToolsExtension
+    if (typeof devToolsExtension === 'function') {
+      enhancers.push(devToolsExtension())
     }
   }
 
@@ -32,6 +39,7 @@ export default (initialState = {}) => {
     initialState,
     composeEnhancers(
       applyMiddleware(...middleware),
+      reactReduxFirebase(fbConfig, reduxConfig),
       ...enhancers
     )
   )
