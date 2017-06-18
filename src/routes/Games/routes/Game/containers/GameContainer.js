@@ -53,9 +53,23 @@ export default class GameContainer extends Component {
   componentWillMount() {
     const { currentGame } = this.props
     this.setState({
-      keyword:isLoaded(currentGame) && currentGame.hasOwnProperty('keyword') ? shuffleLetters(currentGame.keyword) : '',
+      keyword:false,
       guess:''
     })
+    if (isLoaded(currentGame) && currentGame.hasOwnProperty('keyword')) {
+      this.setState({
+        keyword: currentGame.keyword
+      })
+    }
+  }
+
+  componentWillUpdate(nextProps, nextState){
+    const { currentGame } = nextProps
+    if (this.state.keyword === false && isLoaded(currentGame) && currentGame.hasOwnProperty('keyword')) {
+      this.setState({
+        keyword: currentGame.keyword
+      })
+    }
   }
 
   componentDidMount(){
@@ -64,11 +78,6 @@ export default class GameContainer extends Component {
     if ( isLoaded(currentGame, auth, currentPlayers) && auth.uid !== currentGame.createdBy && currentGame.open && !currentPlayers.hasOwnProperty(auth.uid)) {
       this.addUserToGame(auth.uid)
     }
-    // Get Words
-    if (isLoaded(currentGame) && (isEmpty(currentGame.bank) || isEmpty(currentGame.keyword))) {
-      this.populateWords(currentGame)
-    }
-    // Keypress Event Listener
     document.body.addEventListener('keydown', this.keydownEventListener)
   }
 
@@ -78,8 +87,10 @@ export default class GameContainer extends Component {
 
   render(){
     const { currentGame, currentPlayers, auth, games, params:{gameid}, notification } = this.props
-    if (!isLoaded(currentGame, currentPlayers, auth) && !isEmpty(currentGame, currentPlayers, auth)) {
+    if (!isLoaded(currentGame, currentPlayers, auth, currentGame.keyword) && !isEmpty(currentGame, currentPlayers, currentGame.keyword)) {
       return <LoadingSpinner />
+    }else{
+
     }
     const players = !isEmpty(currentPlayers) && !isEmpty(currentGame.players) && 
       Object.keys(currentPlayers)
@@ -123,21 +134,21 @@ export default class GameContainer extends Component {
               }
               </div>
             ))
-          }      
-        </div>
-        <div style={{position:"fixed",right:0,bottom:60,width:300,height:60,textAlign:"left"}}>
-          {
-            this.state.guess.split('').map((letter, index) => 
-              (<span style={{left:index*50,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
-            )
           }
-        </div>
-        <div style={{position:"fixed",right:0,bottom:0,width:300,height:60,textAlign:"left"}}>
-          {
-            this.state.keyword.split('').map((letter, index) => 
-              (<span style={{left:index*50,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
-            )
-          }
+          <div style={{position:"fixed",right:0,bottom:60,width:300,height:60,textAlign:"left"}}>
+            {
+              this.state.guess.split('').map((letter, index) => 
+                (<span key={letter+index+"guess"} style={{transform:`translate(${index*50}px,0)`,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
+              )
+            }
+          </div>
+          <div style={{position:"fixed",right:0,bottom:0,width:300,height:60,textAlign:"left"}}>
+            {
+              this.state.keyword.split('').map((letter, index) => 
+                (<span key={letter+index+"keyword"} style={{transform:`translate(${index*50}px,0)`,transition:"200ms",bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
+              )
+            }
+          </div>
         </div>
       </div>
     )
@@ -157,7 +168,6 @@ export default class GameContainer extends Component {
     let bankWordKey = Object.keys(bank).filter(i => bank[i].word === guess)
     if (guessTaken.length === 0 && bankWordKey.length === 1) {
       // Guess is a word and it's not taken
-      // TODO: add notification "+{point value}"
       let currentScore = currentPlayers[auth.uid].score,
           playerColor = currentPlayers[auth.uid].color,
           newScore = currentScore + bank[bankWordKey].value
@@ -171,6 +181,7 @@ export default class GameContainer extends Component {
             }
           )
         })
+        // TODO: add guess and keyword to redux
         // .then(() => {
         //   showNotification({text:`+${bank[bankWordKey].value}`,type:'success'})
         // })
@@ -235,47 +246,47 @@ export default class GameContainer extends Component {
     }
   }
 
-  addUserToGame(authid){
-    const { params:{gameid}, firebase:{update,set}, currentGame, currentPlayers } = this.props,
-          colors = ["#006B91","#4D00D3","#BD0055"],
-          playersCount = typeof(currentPlayers) === "object" ? Object.keys(currentPlayers).length : 0
-    update(`${GAME_PLAYERS_PATH}/${gameid}/${authid}`, {score:0,color:colors[playersCount],notification:{text:'Joined Game',type:'success'}})
-      .then(() => {
-        if (playersCount === 3) {
-          update(`${GAME_PLAYERS_PATH}/${gameid}/open`, false)
-        }
-        set(`${GAMES_PATH}/${gameid}/players/${authid}`, authid)
-      })
-  }
+  // addUserToGame(authid){
+  //   const { params:{gameid}, firebase:{update,set}, currentGame, currentPlayers } = this.props,
+  //         colors = ["#FF7700","#FF3C00","#D3002B"],
+  //         playersCount = typeof(currentPlayers) === "object" ? Object.keys(currentPlayers).length : 0
+  //   update(`${GAME_PLAYERS_PATH}/${gameid}/${authid}`, {score:0,color:colors[playersCount],notification:{text:'Joined Game',type:'success'}})
+  //     .then(() => {
+  //       if (playersCount === 3) {
+  //         update(`${GAME_PLAYERS_PATH}/${gameid}/open`, false)
+  //       }
+  //       set(`${GAMES_PATH}/${gameid}/players/${authid}`, authid)
+  //     })
+  // }
 
-  populateWords(currentGame){
-    const {params:{gameid}, firebase} = this.props
-    const wordIndex = getRandomNumber(9099)
-    const wordRef = firebase.database().ref(WORD_BANK_PATH +'/'+ wordIndex)
-    wordRef.once("value")
-      .then(snapshot => {
-        const keyword = snapshot.val()
-        const shuffled = shuffleLetters(keyword)
-        this.setState({
-          keyword:shuffled
-        })
-        return keyword
-      })
-      .then(keyword => {
-        const bankRef = firebase.database().ref(WORD_PATH +'/'+ keyword)
-        bankRef.once("value")
-          .then(snapshot => {
-            const bank = snapshot.val()
-            bank[bank.length] = keyword
-            const sortedBank = sortList(bank)
-            const finalBank = assignPointValues(sortedBank)
-            firebase.update(GAMES_PATH+'/'+gameid, {keyword, bank:finalBank, taken:[{word:'No data'}]})
-          })
-      })
-      .catch(e =>{
-        console.log(e)
-      })
-  }  
+  // populateWords(currentGame){
+  //   const {params:{gameid}, firebase} = this.props
+  //   const wordIndex = getRandomNumber(9099)
+  //   const wordRef = firebase.database().ref(WORD_BANK_PATH +'/'+ wordIndex)
+  //   wordRef.once("value")
+  //     .then(snapshot => {
+  //       const keyword = snapshot.val()
+  //       const shuffled = shuffleLetters(keyword)
+  //       this.setState({
+  //         keyword:shuffled
+  //       })
+  //       return keyword
+  //     })
+  //     .then(keyword => {
+  //       const bankRef = firebase.database().ref(WORD_PATH +'/'+ keyword)
+  //       bankRef.once("value")
+  //         .then(snapshot => {
+  //           const bank = snapshot.val()
+  //           bank[bank.length] = keyword
+  //           const sortedBank = sortList(bank)
+  //           const finalBank = assignPointValues(sortedBank)
+  //           firebase.update(GAMES_PATH+'/'+gameid, {keyword, bank:finalBank, taken:[{word:'No data'}]})
+  //         })
+  //     })
+  //     .catch(e =>{
+  //       console.log(e)
+  //     })
+  // }
 }
 
 const styles = {
@@ -289,19 +300,20 @@ const styles = {
     flexDirection:"column",
     flexWrap:"wrap",
     justifyContent:"flex-start",
-    height:"calc(100vh - 80x)",
+    height:"40vh",
+    minHeight:"370px",
     alignItems:"flex-start",
+    alignContent:"center",
     position:"fixed",
-    top:100,
     left:0,
-    bottom:0,
-    right:300,
+    bottom:"30vh",
+    right:0,
     padding:"0 20px"
   },
   wordContainer:{
     display:"flex",
     marginBottom:4,
-    marginRight:4,
+    marginRight:10,
     boxShadow:"0px 1px 8px -2px rgba(0,0,0,0.6)"
   },
   letterContainer:{

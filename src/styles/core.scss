@@ -18,7 +18,11 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    background-color: #eeeeee;
+    background: #ccddee;
+    background: -moz-radial-gradient(center, ellipse cover, #ccddee 0%, #789 100%);
+    background: -webkit-radial-gradient(center, ellipse cover, #ccddee 0%, #789 100%);
+    background: radial-gradient(ellipse at center, #ccddee 0%, #789 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ccddee', endColorstr='#789',GradientType=1 );
     font-family: 'Gudea', 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
   a {

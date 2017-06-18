@@ -29,7 +29,6 @@ const populates = [
 @firebaseConnect([
   { path: 'games', queryParams: [ 'orderByChild=open', 'equalTo=true', 'limitToLast=100' ], populates },
   { path: 'gamePlayers', queryParams: ['limitToLast=100' ]}
-  // '' // string equivalent
 ])
 @connect(
   ({firebase}) => ({
@@ -48,10 +47,10 @@ export default class Games extends Component {
   }
 
   static propTypes = {
-    games: PropTypes.object,
     firebase: PropTypes.object,
-    auth: PropTypes.object,
     children: PropTypes.object,
+    auth: PropTypes.object,
+    games: PropTypes.object,
     gamePlayers: PropTypes.object
   }
 
@@ -59,17 +58,23 @@ export default class Games extends Component {
     const { firebase, auth } = this.props
     newGame.open = true
     newGame.players = {}
+    // add current user to game
     newGame.players[auth.uid] = auth.uid
     return firebase.pushWithMeta('games', newGame)
       .then(data => {
-        firebase.set(`gamePlayers/${data.key}/${auth.uid}`,{score:0,color:'#006B91',notification:{text:'Joined Game',type:'success'}})
-        .then(() => {
-          this.context.router.push(`${GAMES_PATH}/${data.key}`)
-        })
+        this.context.router.push(`${GAMES_PATH}/${data.key}`)
       })
       .catch(err => {
         // TODO: Show Snackbar
         console.error('error creating new game', err) // eslint-disable-line
+      })
+  }
+
+  joinGame = (key) => {
+    const { firebase:{update}, auth } = this.props
+    return update(`${GAMES_PATH}/${key}/players`, {[auth.uid]:auth.uid })
+      .then((snapshot) => {
+        this.context.router.push(`${GAMES_PATH}/${key}`)
       })
   }
 
@@ -99,7 +104,7 @@ export default class Games extends Component {
         <p style={{marginBottom:0}}>
           <img src={games[key].createdBy.avatarUrl} style={{width:40,height:'auto'}}/>&nbsp;
           Owner: {games[key].createdBy.displayName}&nbsp;
-          <Link to={GAMES_PATH+'/'+key} >Join Game</Link>
+          <br/><span onClick={this.joinGame.bind(this,key)}>Join Game</span>
         </p>
       </div>
     )
