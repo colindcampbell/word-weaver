@@ -25,16 +25,18 @@ const populates = [
 //   showNotification
 // }
 
-@UserIsAuthenticated
+// @UserIsAuthenticated
 @firebaseConnect([
   { path: 'games', queryParams: [ 'orderByChild=open', 'equalTo=true', 'limitToLast=100' ], populates },
-  { path: 'gamePlayers', queryParams: ['limitToLast=100' ]}
+  { path: 'gamePlayers', queryParams: ['limitToLast=100' ]},
+  { path: 'gameRounds', queryParams: ['limitToLast=100' ]}
 ])
 @connect(
   ({firebase}) => ({
     auth: pathToJS(firebase, 'auth'),
     games: populatedDataToJS(firebase, 'games', populates),
     gamePlayers: dataToJS(firebase, 'gamePlayers'),
+    // gameRounds: dataToJS(firebase, 'gameRounds')
     // notification: state.notification,
     // showNotification
   }),
@@ -51,13 +53,15 @@ export default class Games extends Component {
     children: PropTypes.object,
     auth: PropTypes.object,
     games: PropTypes.object,
-    gamePlayers: PropTypes.object
+    gamePlayers: PropTypes.object,
+    gameRounds: PropTypes.object
   }
 
   newSubmit = (newGame) => {
     const { firebase, auth } = this.props
     newGame.open = true
     newGame.players = {}
+    newGame.rounds = [0]
     // add current user to game
     newGame.players[auth.uid] = auth.uid
     return firebase.pushWithMeta('games', newGame)
@@ -70,11 +74,11 @@ export default class Games extends Component {
       })
   }
 
-  joinGame = (key) => {
+  joinGame = (gameId) => {
     const { firebase:{update}, auth } = this.props
-    return update(`${GAMES_PATH}/${key}/players`, {[auth.uid]:auth.uid })
+    return update(`${GAMES_PATH}/${gameId}/players`, {[auth.uid]:auth.uid })
       .then((snapshot) => {
-        this.context.router.push(`${GAMES_PATH}/${key}`)
+        this.context.router.push(`${GAMES_PATH}/${gameId}`)
       })
   }
 
@@ -91,7 +95,6 @@ export default class Games extends Component {
     if (!isLoaded(games, auth)) {
       return <LoadingSpinner />
     }
-
     // Project Route is being loaded
     if (this.props.children) {
       // pass all props to children routes

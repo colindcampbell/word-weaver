@@ -5,6 +5,7 @@ export const LOGIN_PATH = '/login'
 export const SIGNUP_PATH = '/signup'
 export const GAMES_PATH = '/games'
 export const GAME_PLAYERS_PATH = '/gamePlayers'
+export const GAME_ROUNDS_PATH = '/gameRounds'
 export const WORD_BANK_PATH = '/wordBank'
 export const WORD_PATH = '/word'
 

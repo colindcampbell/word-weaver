@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { WORD_BANK_PATH, WORD_PATH, GAMES_PATH, GAME_PLAYERS_PATH } from 'constants'
+import { WORD_BANK_PATH, WORD_PATH, GAMES_PATH, GAME_PLAYERS_PATH, GAME_ROUNDS_PATH } from 'constants'
 import { connect } from 'react-redux'
 import {
   firebaseConnect,
@@ -11,10 +11,11 @@ import {
 } from 'react-redux-firebase'
 
 import { UserIsAuthenticated } from 'utils/router'
-import { getRandomNumber, sortList, assignPointValues, shuffleLetters } from 'utils/helpers'
+import { getRandomNumber, shuffleLetters } from 'utils/helpers'
 import LoadingSpinner from 'components/LoadingSpinner'
 import Player from '../components/Player'
 import Radium from 'radium'
+import './guess-container.scss'
 
 const populates = [
   { child: 'players', root: 'users', keyProp: 'uid' }
@@ -26,7 +27,8 @@ const populates = [
   ({params}) => {
     return [
       { path:`${GAMES_PATH}/${params.gameid}`, populates },
-      `${GAME_PLAYERS_PATH}/${params.gameid}`
+      `${GAME_PLAYERS_PATH}/${params.gameid}`,
+      `${GAME_ROUNDS_PATH}/${params.gameid}`
     ]
   }
 )
@@ -34,7 +36,8 @@ const populates = [
   ({firebase}, {params}) => {
   return {
     currentGame: populatedDataToJS(firebase, `${GAMES_PATH}/${params.gameid}`, populates),
-    currentPlayers: dataToJS(firebase, `${GAME_PLAYERS_PATH}/${params.gameid}`)
+    currentPlayers: dataToJS(firebase, `${GAME_PLAYERS_PATH}/${params.gameid}`),
+    gameRounds: dataToJS(firebase, `${GAME_ROUNDS_PATH}/${params.gameid}`)
   }}
 )
 export default class GameContainer extends Component {
@@ -44,6 +47,7 @@ export default class GameContainer extends Component {
 
   static propTypes = {
     currentGame: PropTypes.object,
+    gameRounds: PropTypes.object,
     currentPlayers: PropTypes.object,
     firebase: PropTypes.object,
     auth: PropTypes.object,
@@ -51,33 +55,31 @@ export default class GameContainer extends Component {
   }
 
   componentWillMount() {
-    const { currentGame } = this.props
+    const { gameRounds } = this.props
     this.setState({
       keyword:false,
+      shuffled:'LOADING',
       guess:''
     })
-    if (isLoaded(currentGame) && currentGame.hasOwnProperty('keyword')) {
+    if (isLoaded(gameRounds) && !isEmpty(gameRounds[0])) {
       this.setState({
-        keyword: currentGame.keyword
+        keyword: gameRounds[0].keyword,
+        shuffled: gameRounds[0].shuffled
       })
     }
   }
 
   componentWillUpdate(nextProps, nextState){
-    const { currentGame } = nextProps
-    if (this.state.keyword === false && isLoaded(currentGame) && currentGame.hasOwnProperty('keyword')) {
+    const { gameRounds } = nextProps
+    if (this.state.keyword === false && isLoaded(gameRounds) && !isEmpty(gameRounds[0])) {
       this.setState({
-        keyword: currentGame.keyword
+        keyword: gameRounds[0].keyword,
+        shuffled: gameRounds[0].shuffled
       })
     }
   }
 
   componentDidMount(){
-    const { currentGame, auth, currentPlayers } = this.props
-    // Add user to game if they aren't already in the game
-    if ( isLoaded(currentGame, auth, currentPlayers) && auth.uid !== currentGame.createdBy && currentGame.open && !currentPlayers.hasOwnProperty(auth.uid)) {
-      this.addUserToGame(auth.uid)
-    }
     document.body.addEventListener('keydown', this.keydownEventListener)
   }
 
@@ -86,12 +88,47 @@ export default class GameContainer extends Component {
   }
 
   render(){
-    const { currentGame, currentPlayers, auth, games, params:{gameid}, notification } = this.props
-    if (!isLoaded(currentGame, currentPlayers, auth, currentGame.keyword) && !isEmpty(currentGame, currentPlayers, currentGame.keyword)) {
+    const { currentGame, currentPlayers, gameRounds, auth, games, params:{gameid}, notification } = this.props
+    const { guess } = this.state
+    if (!isLoaded(currentGame, currentPlayers, gameRounds, auth) && !isEmpty(currentGame, currentPlayers, gameRounds )) {
       return <LoadingSpinner />
-    }else{
-
     }
+
+    const currentRound = gameRounds[gameRounds.length - 1]
+    let multiple = false
+    const keywordLetters = currentRound.keyword.split('')
+    const letterStyles = [
+      { style:{}, className:'loading' },
+      { style:{}, className:'loading' },
+      { style:{}, className:'loading' },
+      { style:{}, className:'loading' },
+      { style:{}, className:'loading' },
+      { style:{}, className:'loading' }
+    ]
+    keywordLetters.forEach((letter) => {
+      if (currentRound.keyword.lastIndexOf(letter) !== currentRound.keyword.indexOf(letter)) {
+        multiple = true
+      }
+    })
+    if (multiple) {
+        // TODO: add functionality for words with the same letter multiple times
+    }else{
+      this.state.guess.split('').forEach((letter,index) => {
+        letterStyles[currentRound.keyword.indexOf(letter)] = 
+        {
+          style:{transform:`translate3d(${50*index}px,-50px,0)`},
+          className:`show-${currentRound.keyword.indexOf(letter)}`
+        }
+      })
+      this.state.shuffled.split('').forEach((letter,index) => {
+        letterStyles[currentRound.keyword.indexOf(letter)] = 
+        {
+          style:{transform:`translate3d(${50*index}px,0,0)`},
+          className:`show-${currentRound.keyword.indexOf(letter)}`
+        }
+      })
+    }
+
     const players = !isEmpty(currentPlayers) && !isEmpty(currentGame.players) && 
       Object.keys(currentPlayers)
       .filter(authid => 
@@ -101,7 +138,8 @@ export default class GameContainer extends Component {
         !isEmpty(currentGame.players[authid]))
       .map(authid => 
         (<Player key={authid} id={authid} playerGame={currentPlayers[authid]} profile={currentGame.players[authid]} />)
-      ) 
+      )
+
     return(
       <div style={{ margin: '0 auto' }} >
         <h2>{currentGame.name}</h2>
@@ -110,19 +148,19 @@ export default class GameContainer extends Component {
         </div>
         <div style={styles.wordColumn}>
           {
-            !isEmpty(currentGame.bank) && Object.keys(currentGame.bank)
+            !isEmpty(currentRound.bank) && Object.keys(currentRound.bank)
             .map(key => (
               <div key={key} style={styles.wordContainer}>
               {
-                currentGame.bank[key].word.split('')
+                currentRound.bank[key].word.split('')
                   .map((letter,index) => (
                     <div key={key+letter+index} style={styles.letterContainer}>
                       <span style={styles.letterMask}></span>
                       {
-                        ( currentGame.taken[key] && currentGame.taken[key].word === currentGame.bank[key].word ) ? 
+                        ( currentRound.taken[key] && currentRound.taken[key].word === currentRound.bank[key].word ) ? 
                         (
                           <div>
-                            <span style={{backgroundColor:currentGame.taken[key].color,position:"absolute",left:0,right:0,top:0,bottom:0,zIndex:1,borderRadius:2}}></span>
+                            <span style={{backgroundColor:currentRound.taken[key].color,position:"absolute",left:0,right:0,top:0,bottom:0,zIndex:1,borderRadius:2}}></span>
                             <span style={styles.letter}>{letter.toUpperCase()}</span>
                           </div>
                         ) : 
@@ -135,56 +173,57 @@ export default class GameContainer extends Component {
               </div>
             ))
           }
-          <div style={{position:"fixed",right:0,bottom:60,width:300,height:60,textAlign:"left"}}>
-            {
-              this.state.guess.split('').map((letter, index) => 
-                (<span key={letter+index+"guess"} style={{transform:`translate(${index*50}px,0)`,bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
+          <div style={{position:"fixed",right:0,bottom:0,width:300,height:120,textAlign:"left"}}>
+            {keywordLetters.map((letter, index) => 
+              (
+                <section 
+                  key={letter+index+"guess"}
+                  className="letter-container"
+                  style={letterStyles[index].style}
+                  onClick={ guess.indexOf(letter) > -1 ? 
+                    this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
+                    this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) } >
+                  <div id="cube" className={letterStyles[index].className}>
+                    <figure className="front">{keywordLetters[0]}</figure>
+                    <figure className="back">{keywordLetters[1]}</figure>
+                    <figure className="right">{keywordLetters[2]}</figure>
+                    <figure className="left">{keywordLetters[3]}</figure>
+                    <figure className="top">{keywordLetters[4]}</figure>
+                    <figure className="bottom">{keywordLetters[5]}</figure>
+                  </div>
+                </section>
               )
-            }
-          </div>
-          <div style={{position:"fixed",right:0,bottom:0,width:300,height:60,textAlign:"left"}}>
-            {
-              this.state.keyword.split('').map((letter, index) => 
-                (<span key={letter+index+"keyword"} style={{transform:`translate(${index*50}px,0)`,transition:"200ms",bottom:10,width:40,height:40,background:"#ffffff",color:"black",position:"absolute",display:"block",border:"1px solid #666",borderRadius:4,fontSize:32,textAlign:"center",lineHeight:"38px"}}>{letter.toUpperCase()}</span>)
-              )
-            }
+            )}
           </div>
         </div>
       </div>
     )
   }
 
-  clearWord = () => {
-    this.setState(prevState => ({
-      guess:'',
-      keyword:prevState.keyword + prevState.guess
-    }))
-  }
-
-  submitGuess = (taken, bank, gameid, update) => {
-    let { keyword, guess } = this.state
-    const { auth, currentGame, currentPlayers } = this.props
-    let guessTaken = Object.keys(taken).filter(i => (taken[i] !== undefined && taken[i].word === guess))
-    let bankWordKey = Object.keys(bank).filter(i => bank[i].word === guess)
+  submitGuess = (gameid, update) => {
+    let { guess } = this.state
+    const { auth, gameRounds, currentPlayers } = this.props
+    const roundIndex = gameRounds.length - 1
+    const currentRound = gameRounds[roundIndex]
+    // Reset Guess
+    this.resetGuess()
+    let guessTaken = Object.keys(currentRound.taken).filter(i => (currentRound.taken[i] !== undefined && currentRound.taken[i].word === guess))
+    let bankWordKey = Object.keys(currentRound.bank).filter(i => currentRound.bank[i].word === guess)
     if (guessTaken.length === 0 && bankWordKey.length === 1) {
       // Guess is a word and it's not taken
       let currentScore = currentPlayers[auth.uid].score,
           playerColor = currentPlayers[auth.uid].color,
-          newScore = currentScore + bank[bankWordKey].value
-      update(`${GAMES_PATH}/${gameid}/taken`, {[bankWordKey]:{word:guess,color:playerColor}})
+          newScore = currentScore + currentRound.bank[bankWordKey].value
+      update(`${GAME_ROUNDS_PATH}/${gameid}/${roundIndex}/taken`, {[bankWordKey]:{word:guess,color:playerColor}})
         .then(() => {
           update(
             `${GAME_PLAYERS_PATH}/${gameid}/${auth.uid}`,
             {
               score:newScore,
-              notification:{text:`+${bank[bankWordKey].value}`,type:'word'}
+              notification:{text:`${guess.toUpperCase()} +${currentRound.bank[bankWordKey].value}`,type:'word'}
             }
           )
         })
-        // TODO: add guess and keyword to redux
-        // .then(() => {
-        //   showNotification({text:`+${bank[bankWordKey].value}`,type:'success'})
-        // })
         .catch(e => {
           console.log(e)
         })
@@ -193,100 +232,68 @@ export default class GameContainer extends Component {
     }else if (bankWordKey.length === 0) {
       update(`${GAME_PLAYERS_PATH}/${gameid}/${auth.uid}/notification`,{text:`${guess.toUpperCase()} is not a word`,type:'word'})
     }
-    // Reset Guess
-    this.setState(prevState => ({
-      guess:'',
-      keyword:prevState.keyword + prevState.guess
-    }))    
-  }
-
-  addLetterToGuess = (letter, letterIndex) => {
-    this.setState(prevState => ({
-      guess:prevState.guess + letter,
-      keyword:prevState.keyword.slice(0,letterIndex)+prevState.keyword.slice(letterIndex+1)
-    }))
-  }
-
-  removeLetterFromGuess = () => {
-    this.setState(prevState => ({
-      guess:prevState.guess.slice(0, prevState.guess.length - 1),
-      keyword:prevState.keyword + prevState.guess.substr(prevState.guess.length - 1)
-    }))
-  }
-
-  setKeyword = (keyword) => {
-    this.setState({keyword})
   }
 
   keydownEventListener = (event) =>{
-    let { keyword, guess } = this.state
-    // console.log(event.key)
-    let { currentGame:{bank, taken}, firebase:{update}, params:{gameid} } = this.props
+    let { keyword, shuffled, guess } = this.state
+    const { firebase:{update}, params:{gameid}, gameRounds } = this.props
+    const currentRound = gameRounds[gameRounds.length - 1]
     let key = event.key.toLowerCase(),
-        letterIndex = keyword.indexOf(key)
+        letterIndex = shuffled.indexOf(key)
     if ( letterIndex > -1 ) {
       this.addLetterToGuess(key,letterIndex)
     }
     // Submit guess - clear guess word after testing if it is an available answer
     if (key === 'enter') {
-      this.submitGuess(taken,bank,gameid,update)
+      this.submitGuess(gameid,update)
     }
-    // Clear guess word
+    // Reset guess word
     if (key === 'escape') {
-      this.clearWord()
+      this.resetGuess()
     }
     // Backspace guess word
     if (key === 'backspace') {
-      this.removeLetterFromGuess()
+      this.backspaceLetterFromGuess()
     }
     // Shuffle letters
     if (key === ' ') {
-      const shuffled = shuffleLetters(keyword)
-      this.setKeyword(shuffled)
+      const newShuffled = shuffleLetters(shuffled)
+      this.setShuffled(newShuffled)
     }
   }
 
-  // addUserToGame(authid){
-  //   const { params:{gameid}, firebase:{update,set}, currentGame, currentPlayers } = this.props,
-  //         colors = ["#FF7700","#FF3C00","#D3002B"],
-  //         playersCount = typeof(currentPlayers) === "object" ? Object.keys(currentPlayers).length : 0
-  //   update(`${GAME_PLAYERS_PATH}/${gameid}/${authid}`, {score:0,color:colors[playersCount],notification:{text:'Joined Game',type:'success'}})
-  //     .then(() => {
-  //       if (playersCount === 3) {
-  //         update(`${GAME_PLAYERS_PATH}/${gameid}/open`, false)
-  //       }
-  //       set(`${GAMES_PATH}/${gameid}/players/${authid}`, authid)
-  //     })
-  // }
+  addLetterToGuess = (letter, letterIndex) => {
+    this.setState(prevState => ({
+      guess:prevState.guess + letter,
+      shuffled:prevState.shuffled.slice(0,letterIndex) + prevState.shuffled.slice(letterIndex+1)
+    }))
+  }
 
-  // populateWords(currentGame){
-  //   const {params:{gameid}, firebase} = this.props
-  //   const wordIndex = getRandomNumber(9099)
-  //   const wordRef = firebase.database().ref(WORD_BANK_PATH +'/'+ wordIndex)
-  //   wordRef.once("value")
-  //     .then(snapshot => {
-  //       const keyword = snapshot.val()
-  //       const shuffled = shuffleLetters(keyword)
-  //       this.setState({
-  //         keyword:shuffled
-  //       })
-  //       return keyword
-  //     })
-  //     .then(keyword => {
-  //       const bankRef = firebase.database().ref(WORD_PATH +'/'+ keyword)
-  //       bankRef.once("value")
-  //         .then(snapshot => {
-  //           const bank = snapshot.val()
-  //           bank[bank.length] = keyword
-  //           const sortedBank = sortList(bank)
-  //           const finalBank = assignPointValues(sortedBank)
-  //           firebase.update(GAMES_PATH+'/'+gameid, {keyword, bank:finalBank, taken:[{word:'No data'}]})
-  //         })
-  //     })
-  //     .catch(e =>{
-  //       console.log(e)
-  //     })
-  // }
+  removeLetterFromGuess = (letter, letterIndex) => {
+    this.setState(prevState => ({
+      guess:prevState.guess.slice(0,letterIndex) + prevState.guess.slice(letterIndex+1),
+      shuffled:prevState.shuffled + letter
+    }))
+  }  
+
+  backspaceLetterFromGuess = () => {
+    this.setState(prevState => ({
+      guess:prevState.guess.slice(0, prevState.guess.length - 1),
+      shuffled:prevState.guess.substr(prevState.guess.length - 1) + prevState.shuffled
+    }))
+  }
+
+  resetGuess = () => {
+    this.setState(prevState => ({
+      guess:'',
+      shuffled:prevState.guess + prevState.shuffled
+    }))
+  }
+
+  setShuffled = (shuffled) => {
+    this.setState({shuffled})
+  }
+
 }
 
 const styles = {

@@ -46,8 +46,8 @@ export default class Header extends Component {
           Counter
         </Link>
         {' · '}
-        <Link to={accountExists ? ACCOUNT_PATH : SIGNUP_PATH} activeClassName='route--active'>
-          {accountExists ? 'Account' : 'Signup'}
+        <Link to={accountExists ? ACCOUNT_PATH : LOGIN_PATH} activeClassName='route--active'>
+          {accountExists ? 'Account' : 'Login'}
         </Link>    
         {' · '}
         <Link to={GAMES_PATH} activeClassName='route--active'>

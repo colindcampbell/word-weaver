@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
-exports.populateGameWords = functions.database.ref('/games/{gameId}/createdBy').onWrite(event => {
+exports.populateRoundWords = functions.database.ref('/games/{gid}/rounds/{rid}').onWrite(event => {
   // Only edit data when it is first created.
   if (event.data.previous.exists()) {
     return;
@@ -11,59 +11,56 @@ exports.populateGameWords = functions.database.ref('/games/{gameId}/createdBy').
   if (!event.data.exists()) {
     return;
   }
-  const wordIndex = getRandomNumber(9099);
-  admin.database().ref('/wordBank/'+ wordIndex).once('value')
-    .then(snapshot => {
-      const keyword = snapshot.val();
-      admin.database().ref('/word/'+ keyword).once('value')
-        .then(snapshot => {
-          const bank = snapshot.val();
-          bank[bank.length] = keyword;
-          const sortedBank = sortList(bank);
-          const finalBank = assignPointValues(sortedBank);
-      		const shuffled = shuffleLetters(keyword);
-          return event.data.ref.parent
-          	.update({
-          		[shuffled],
-          		[keyword],
-          		bank:finalBank,
-          		taken:[{word:'No data'}]
-          	});
-        });
-    })
-    .catch(e => {
-    	console.log(e);
-    });
-});
+  const wordIndex = getRandomNumber(9099)
+  let keyword = ''
+  return admin.database().ref('/wordBank/'+ wordIndex).once('value').then(snap => {
+    keyword = snap.val()
+    return admin.database().ref('/word/'+ keyword).once('value')
+  }).then(snap => {
+    const bank = snap.val()
+    bank[bank.length] = keyword;
+    const sortedBank = sortList(bank)
+    const finalBank = assignPointValues(sortedBank)
+		const shuffled = shuffleLetters(keyword)
+		return admin.database().ref(`/gameRounds/${event.params.gid}/${event.params.rid}`).update({
+			shuffled:shuffled,
+  		keyword:keyword,
+  		bank:finalBank,
+  		taken:[{word:'No data'}],
+  		finished:false
+  	})
+  }).catch(e => {
+  	console.log(e)
+  })
+})
 
-exports.addUserToGame = functions.database.ref('/games/{gameId}/players/{uid}').onWrite(event => {
+exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onWrite(event => {
   // Exit when the data is deleted.
   if (!event.data.exists()) {
-  	// TODO: delete '/gamePlayers/gameId/uid'
+  	// TODO: delete '/gamePlayers/gid/uid'
     return;
   }
   // Get players count
+  let playersCount
   const colors = ["#007AD5","#00B290","#5A00F0"];
-  admin.database().ref(`/games/${event.params.gameId}/players`).once('value').then(snapshot => {
-  	const playersCount = Object.keys(snapshot.val()).length;
-	  return admin.database().ref(`gamePlayers/${event.params.gameId}/${event.params.uid}`)
+  return admin.database().ref(`/games/${event.params.gid}/players`).once('value').then(snap => {
+  	playersCount = Object.keys(snap.val()).length
+	  return admin.database().ref(`gamePlayers/${event.params.gid}/${event.params.uid}`)
 	  	.update({
 	  		score:0,
 	  		color:colors[playersCount],
 	  		notification:{text:'Joined Game',type:'success'}
 	  	})
-	    .then(() => {
-	      if (playersCount === 3) {
-	        return admin.database().ref(`gamePlayers/${event.params.gameId}`).update({open:false});
-	      }
-	      return;
-	    });
+  }).then(() => {
+    if (playersCount === 3) {
+      return admin.database().ref(`gamePlayers/${event.params.gid}`).update({open:false})
+    }
+    return
   })
   .catch(e => {
   	console.log(e);
-  });
-
-});
+  })
+})
 
 const getRandomNumber = (n) => {
   const MAX_RANDOM = Math.pow(2, 30);
