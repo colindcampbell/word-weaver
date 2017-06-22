@@ -10,7 +10,7 @@ import {
 } from 'react-redux-firebase'
 import { LOGIN_PATH } from 'constants'
 import { UserIsNotAuthenticated } from 'utils/router'
-import * as firebaseui from 'firebaseui'
+// import * as firebaseui from 'firebaseui'
 import './signup-container.css'
 import { GAMES_PATH } from 'constants'
 // import SignupForm from '../components/SignupForm'

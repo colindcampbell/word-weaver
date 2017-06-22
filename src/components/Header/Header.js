@@ -42,10 +42,6 @@ export default class Header extends Component {
           Home
         </IndexLink>
         {' · '}
-        <Link to='/counter' activeClassName='route--active'>
-          Counter
-        </Link>
-        {' · '}
         <Link to={accountExists ? ACCOUNT_PATH : LOGIN_PATH} activeClassName='route--active'>
           {accountExists ? 'Account' : 'Login'}
         </Link>    
