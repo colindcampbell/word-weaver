@@ -4,21 +4,47 @@ const sleep = require('system-sleep')
 admin.initializeApp(functions.config().firebase);
 
 // exports.allPlayersReady = functions.database.ref('/games/{gid}/playersReady').
-exports.startRound = functions.database.ref('/games/{gid}/preRoundTimer').onWrite(event => {
+exports.startPreRound = functions.database.ref('/games/{gid}/preRoundTimer').onWrite(event => {
   const timer = event.data.val()
   if (timer > 0) {
     let newTimer = timer - 1
     sleep(900)
-    console.log(timer)
+    console.log('Pre-round', timer)
     return event.data.ref.set(newTimer)
   }else if(timer === 0){
     const gameRef = event.data.ref.parent
     return gameRef.child('open').once('value').then(snap => {
       console.log(snap.val())
       if (!snap.val()) {
-        return gameRef.child('roundTimer').set(120)
+        return gameRef.child('roundTimer').set(10)
       }
       return
+    })
+  }
+})
+
+exports.startRound = functions.database.ref('/games/{gid}/roundTimer').onWrite(event => {
+  const timer = event.data.val()
+  if (timer > 0) {
+    let newTimer = timer - 1
+    sleep(900)
+    console.log('Round', timer)
+    return event.data.ref.set(newTimer)
+  }else if(timer === 0){
+    const gameRef = event.data.ref.parent
+    return gameRef.child('round').once('value').then(snap => {
+      newRoundIndex = snap.val() + 1
+      if (newRoundIndex < 2) {
+        return gameRef.update({
+          round:newRoundIndex,
+          preRoundTimer:10,
+        })
+      }else{
+        // TODO: calculate and set winner
+        return gameRef.update({
+          finished:true
+        })
+      }
     })
   }
 })
@@ -29,6 +55,7 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
   //   return;
   // }
   // Exit when the data is deleted.
+  // TODO: only populate round once the last player has joined
   if (!event.data.exists()) {
     return;
   }
@@ -44,13 +71,18 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
     const sortedBank = sortList(bank)
     const finalBank = assignPointValues(sortedBank)
 		const shuffled = shuffleLetters(keyword)
+    console.log(keyword)
 		return admin.database().ref(`/gameRounds/${event.params.gid}/${roundIndex}`).update({
 			shuffled:shuffled,
   		keyword:keyword,
   		bank:finalBank,
   		taken:[{word:'No data'}],
   		finished:false
-  	})
+    })
+  }).then(snap => {
+    if (roundIndex > 0) {
+      snap.ref.child('finished').set(true)
+    }
   }).catch(e => {
   	console.log(e)
   })

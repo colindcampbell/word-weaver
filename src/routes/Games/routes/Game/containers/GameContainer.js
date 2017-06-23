@@ -97,7 +97,7 @@ export default class GameContainer extends Component {
     console.log(currentGameRounds)
     let lastRoundIndex = Object.keys(currentGameRounds).length -1
     const currentRound = currentGameRounds[lastRoundIndex]
-    
+
     let multiple = false
     const keywordLetters = currentRound.keyword.split('')
     const letterStyles = [
@@ -182,7 +182,10 @@ export default class GameContainer extends Component {
                   key={letter+index+"guess"}
                   className="letter-container"
                   style={letterStyles[index].style}
-                  onClick={ guess.indexOf(letter) > -1 ? 
+                  onTouchStart={ guess.indexOf(letter) > -1 ? 
+                    this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
+                    this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) }
+                  onMouseDown={ guess.indexOf(letter) > -1 ? 
                     this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
                     this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) } >
                   <div id="cube" className={letterStyles[index].className}>
