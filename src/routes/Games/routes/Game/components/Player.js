@@ -11,7 +11,8 @@ export default class Player extends Component {
     const notification = !isEmpty(playerGame.notification) && playerGame.notification.text !== '' &&
       playerGame.notification.text
     return (
-      <div key={id} style={{textAlign:"right",display:"flex",width:"100%",marginBottom:20}} >
+      <div key={id} style={{textAlign:"left",display:"flex",width:"100%",marginBottom:10}} >
+        <img src={ profile.avatarUrl } style={{width:80,height:80,borderRadius:10,border:`4px solid ${playerGame.color}`,marginLeft:10,marginRight:10}}/>
         <div style={{flex:1}}>
           <h3>{ profile.displayName }</h3>
           <h3>{ !isEmpty(playerGame) ? playerGame.score : 'Loading Score...' }</h3>
@@ -19,7 +20,6 @@ export default class Player extends Component {
             { notification }
           </div>
         </div>
-        <img src={ profile.avatarUrl } style={{width:80,height:80,borderRadius:10,border:`4px solid ${playerGame.color}`,marginLeft:20,marginRight:10}}/>
       </div>
     )
   }

@@ -1,16 +1,38 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const sleep = require('system-sleep')
 admin.initializeApp(functions.config().firebase);
 
-exports.populateRoundWords = functions.database.ref('/games/{gid}/rounds/{rid}').onWrite(event => {
-  // Only edit data when it is first created.
-  if (event.data.previous.exists()) {
-    return;
+// exports.allPlayersReady = functions.database.ref('/games/{gid}/playersReady').
+exports.startRound = functions.database.ref('/games/{gid}/preRoundTimer').onWrite(event => {
+  const timer = event.data.val()
+  if (timer > 0) {
+    let newTimer = timer - 1
+    sleep(900)
+    console.log(timer)
+    return event.data.ref.set(newTimer)
+  }else if(timer === 0){
+    const gameRef = event.data.ref.parent
+    return gameRef.child('open').once('value').then(snap => {
+      console.log(snap.val())
+      if (!snap.val()) {
+        return gameRef.child('roundTimer').set(120)
+      }
+      return
+    })
   }
+})
+
+exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrite(event => {
+  // Only edit data when it is first created.
+  // if (event.data.previous.exists()) {
+  //   return;
+  // }
   // Exit when the data is deleted.
   if (!event.data.exists()) {
     return;
   }
+  const roundIndex = event.data.val()
   const wordIndex = getRandomNumber(9099)
   let keyword = ''
   return admin.database().ref('/wordBank/'+ wordIndex).once('value').then(snap => {
@@ -22,7 +44,7 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/rounds/{rid}')
     const sortedBank = sortList(bank)
     const finalBank = assignPointValues(sortedBank)
 		const shuffled = shuffleLetters(keyword)
-		return admin.database().ref(`/gameRounds/${event.params.gid}/${event.params.rid}`).update({
+		return admin.database().ref(`/gameRounds/${event.params.gid}/${roundIndex}`).update({
 			shuffled:shuffled,
   		keyword:keyword,
   		bank:finalBank,
@@ -37,23 +59,29 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/rounds/{rid}')
 exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onWrite(event => {
   // Exit when the data is deleted.
   if (!event.data.exists()) {
-  	// TODO: delete '/gamePlayers/gid/uid'
+  	// TODO: delete '/gamePlayers/gid/uid', set game open to true, 
     return;
   }
   // Get players count
   let playersCount
-  const colors = ["#007AD5","#00B290","#5A00F0"];
+  const colors = ["#007AD5","#008A69","#5A00F0"];
   return admin.database().ref(`/games/${event.params.gid}/players`).once('value').then(snap => {
   	playersCount = Object.keys(snap.val()).length
 	  return admin.database().ref(`gamePlayers/${event.params.gid}/${event.params.uid}`)
 	  	.update({
 	  		score:0,
-	  		color:colors[playersCount],
+	  		color:colors[playersCount - 1],
 	  		notification:{text:'Joined Game',type:'success'}
 	  	})
   }).then(() => {
-    if (playersCount === 3) {
-      return admin.database().ref(`gamePlayers/${event.params.gid}`).update({open:false})
+    // TODO: change to 3
+    // Start Game
+    if (playersCount === 2) {
+      return admin.database().ref(`games/${event.params.gid}`)
+      .update({
+        open:false,
+        preRoundTimer:10
+      })
     }
     return
   })
