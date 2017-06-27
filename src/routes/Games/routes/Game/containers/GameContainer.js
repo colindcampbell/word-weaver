@@ -71,7 +71,7 @@ export default class GameContainer extends Component {
 
   componentWillUpdate(nextProps, nextState){
     const { gameRounds } = nextProps
-    if (this.state.keyword === false && isLoaded(gameRounds) && !isEmpty(gameRounds[0])) {
+    if (this.state.keyword === false && isLoaded(gameRounds) && !isEmpty(gameRounds)) {
       this.setState({
         keyword: gameRounds[0].keyword,
         shuffled: gameRounds[0].shuffled
@@ -93,7 +93,7 @@ export default class GameContainer extends Component {
     if (!isLoaded(currentGame, currentPlayers, gameRounds, auth) && !isEmpty(currentGame, currentPlayers, gameRounds )) {
       return <LoadingSpinner />
     }
-
+    console.log(gameRounds)
     const currentRound = gameRounds[gameRounds.length - 1]
     let multiple = false
     const keywordLetters = currentRound.keyword.split('')

@@ -1,6 +1,25 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const sleep = require('system-sleep')
 admin.initializeApp(functions.config().firebase);
+
+exports.startRound = functions.database.ref('/games/{gid}/preRoundTimer').onWrite(event => {
+	const timer = event.data.val()
+	if (timer > 0) {
+		const newTimer = timer - 1
+		sleep(900)
+		console.log(timer)
+		return event.data.ref.set(newTimer)
+	}else if(timer === 0){
+		const gameRef = event.data.ref.parent
+		return gameRef.child('open').once('value').then(snap => {
+			if (snap.val() === 'true') {
+				return gameRef.child('roundTimer').set(120)
+			}
+			return
+		})
+	}
+})
 
 exports.populateRoundWords = functions.database.ref('/games/{gid}/rounds/{rid}').onWrite(event => {
   // Only edit data when it is first created.
@@ -38,27 +57,31 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
   // Exit when the data is deleted.
   if (!event.data.exists()) {
   	// TODO: delete '/gamePlayers/gid/uid'
-    return;
+    return
   }
   // Get players count
   let playersCount
-  const colors = ["#007AD5","#00B290","#5A00F0"];
+  const colors = ["#007AD5","#009C7E","#5A00F0"];
   return admin.database().ref(`/games/${event.params.gid}/players`).once('value').then(snap => {
   	playersCount = Object.keys(snap.val()).length
 	  return admin.database().ref(`gamePlayers/${event.params.gid}/${event.params.uid}`)
 	  	.update({
 	  		score:0,
-	  		color:colors[playersCount],
-	  		notification:{text:'Joined Game',type:'success'}
+	  		color:colors[playersCount - 1],
+	  		notification:{text:'Joined Game',type:'success'},
+	  		open:true
 	  	})
   }).then(() => {
-    if (playersCount === 3) {
-      return admin.database().ref(`gamePlayers/${event.params.gid}`).update({open:false})
+    if (playersCount === 1) {
+      return admin.database().ref(`gamePlayers/${event.params.gid}`).update({
+      	open:false,
+				preRoundTimer:30
+      })
     }
     return
   })
   .catch(e => {
-  	console.log(e);
+  	console.log(e)
   })
 })
 
