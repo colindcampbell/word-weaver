@@ -14,7 +14,7 @@ import { UserIsAuthenticated } from 'utils/router'
 import { getRandomNumber, shuffleLetters } from 'utils/helpers'
 import LoadingSpinner from 'components/LoadingSpinner'
 import Player from '../components/Player'
-import Radium from 'radium'
+// import Radium from 'radium'
 import './guess-container.scss'
 
 const populates = [
@@ -22,7 +22,7 @@ const populates = [
 ]
 
 @UserIsAuthenticated
-@Radium
+// @Radium
 @firebaseConnect(
   ({params}) => {
     return [
@@ -37,7 +37,7 @@ const populates = [
   return {
     currentGame: populatedDataToJS(firebase, `${GAMES_PATH}/${params.gameid}`, populates),
     currentPlayers: dataToJS(firebase, `${GAME_PLAYERS_PATH}/${params.gameid}`),
-    gameRounds: dataToJS(firebase, `${GAME_ROUNDS_PATH}/${params.gameid}`)
+    currentGameRounds: dataToJS(firebase, `${GAME_ROUNDS_PATH}/${params.gameid}`)
   }}
 )
 export default class GameContainer extends Component {
@@ -47,7 +47,7 @@ export default class GameContainer extends Component {
 
   static propTypes = {
     currentGame: PropTypes.object,
-    gameRounds: PropTypes.object,
+    currentGameRounds: PropTypes.array,
     currentPlayers: PropTypes.object,
     firebase: PropTypes.object,
     auth: PropTypes.object,
@@ -55,26 +55,26 @@ export default class GameContainer extends Component {
   }
 
   componentWillMount() {
-    const { gameRounds } = this.props
+    const { currentGameRounds } = this.props
     this.setState({
       keyword:false,
       shuffled:'LOADING',
       guess:''
     })
-    if (isLoaded(gameRounds) && !isEmpty(gameRounds[0])) {
+    if (isLoaded(currentGameRounds) && !isEmpty(currentGameRounds[0])) {
       this.setState({
-        keyword: gameRounds[0].keyword,
-        shuffled: gameRounds[0].shuffled
+        keyword: currentGameRounds[0].keyword,
+        shuffled: currentGameRounds[0].shuffled
       })
     }
   }
 
   componentWillUpdate(nextProps, nextState){
-    const { gameRounds } = nextProps
-    if (this.state.keyword === false && isLoaded(gameRounds) && !isEmpty(gameRounds)) {
+    const { currentGameRounds } = nextProps
+    if (this.state.keyword === false && isLoaded(currentGameRounds) && !isEmpty(currentGameRounds)) {
       this.setState({
-        keyword: gameRounds[0].keyword,
-        shuffled: gameRounds[0].shuffled
+        keyword: currentGameRounds[0].keyword,
+        shuffled: currentGameRounds[0].shuffled
       })
     }
   }
@@ -88,13 +88,16 @@ export default class GameContainer extends Component {
   }
 
   render(){
-    const { currentGame, currentPlayers, gameRounds, auth, games, params:{gameid}, notification } = this.props
+    const { currentGame, currentPlayers, currentGameRounds, auth, games, params:{gameid}, notification } = this.props
     const { guess } = this.state
-    if (!isLoaded(currentGame, currentPlayers, gameRounds, auth) && !isEmpty(currentGame, currentPlayers, gameRounds )) {
+    if (!isLoaded(currentGame, currentPlayers, currentGameRounds, auth) && !isEmpty(currentGame, currentPlayers, currentGameRounds)) {
       return <LoadingSpinner />
     }
-    console.log(gameRounds)
-    const currentRound = gameRounds[gameRounds.length - 1]
+
+    console.log(currentGameRounds)
+    let lastRoundIndex = Object.keys(currentGameRounds).length -1
+    const currentRound = currentGameRounds[lastRoundIndex]
+
     let multiple = false
     const keywordLetters = currentRound.keyword.split('')
     const letterStyles = [
@@ -141,9 +144,8 @@ export default class GameContainer extends Component {
       )
 
     return(
-      <div style={{ margin: '0 auto' }} >
-        <h2>{currentGame.name}</h2>
-        <div style={{position:"fixed",right:0,top:0,width:300,bottom:120,display:"flex",flexWrap:"wrap",alignItems:"flex-end",alignContent:"flex-end"}}>
+      <div style={{ margin: '0 auto', overflowY:"auto" }} >
+        <div style={{position:"fixed",left:0,bottom:0,width:300,display:"flex",flexWrap:"wrap",alignItems:"flex-end",alignContent:"flex-end"}}>
           {players}       
         </div>
         <div style={styles.wordColumn}>
@@ -180,7 +182,10 @@ export default class GameContainer extends Component {
                   key={letter+index+"guess"}
                   className="letter-container"
                   style={letterStyles[index].style}
-                  onClick={ guess.indexOf(letter) > -1 ? 
+                  onTouchStart={ guess.indexOf(letter) > -1 ? 
+                    this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
+                    this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) }
+                  onMouseDown={ guess.indexOf(letter) > -1 ? 
                     this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
                     this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) } >
                   <div id="cube" className={letterStyles[index].className}>
@@ -202,9 +207,9 @@ export default class GameContainer extends Component {
 
   submitGuess = (gameid, update) => {
     let { guess } = this.state
-    const { auth, gameRounds, currentPlayers } = this.props
-    const roundIndex = gameRounds.length - 1
-    const currentRound = gameRounds[roundIndex]
+    const { auth, currentGameRounds, currentPlayers } = this.props
+    const roundIndex = currentGameRounds.length - 1
+    const currentRound = currentGameRounds[roundIndex]
     // Reset Guess
     this.resetGuess()
     let guessTaken = Object.keys(currentRound.taken).filter(i => (currentRound.taken[i] !== undefined && currentRound.taken[i].word === guess))
@@ -236,8 +241,8 @@ export default class GameContainer extends Component {
 
   keydownEventListener = (event) =>{
     let { keyword, shuffled, guess } = this.state
-    const { firebase:{update}, params:{gameid}, gameRounds } = this.props
-    const currentRound = gameRounds[gameRounds.length - 1]
+    const { firebase:{update}, params:{gameid}, currentGameRounds } = this.props
+    const currentRound = currentGameRounds[currentGameRounds.length - 1]
     let key = event.key.toLowerCase(),
         letterIndex = shuffled.indexOf(key)
     if ( letterIndex > -1 ) {
@@ -307,15 +312,16 @@ const styles = {
     flexDirection:"column",
     flexWrap:"wrap",
     justifyContent:"flex-start",
-    height:"40vh",
+    height:"65vh",
     minHeight:"370px",
     alignItems:"flex-start",
     alignContent:"center",
     position:"fixed",
     left:0,
-    bottom:"30vh",
+    top:"20px",
     right:0,
-    padding:"0 20px"
+    padding:"0 20px",
+    overflowY:"scroll"
   },
   wordContainer:{
     display:"flex",
