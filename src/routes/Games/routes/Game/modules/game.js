@@ -1,18 +1,18 @@
 // ------------------------------------
 // Constants
 // ------------------------------------
-export const GAME_SHOW_NOTIFICATION = 'GAME_SHOW_NOTIFICATION'
+// export const GAME_SHOW_NOTIFICATION = 'GAME_SHOW_NOTIFICATION'
 // export const COUNTER_DOUBLE_ASYNC = 'COUNTER_DOUBLE_ASYNC'
 
 // ------------------------------------
 // Actions
 // ------------------------------------
-export const showNotification = (notification) => {
-  return {
-    type    : GAME_SHOW_NOTIFICATION,
-    payload : notification
-  }
-}
+// export const showNotification = (notification) => {
+//   return {
+//     type    : GAME_SHOW_NOTIFICATION,
+//     payload : notification
+//   }
+// }
 
 /*  This is a thunk, meaning it is a function that immediately
     returns a function for lazy evaluation. It is incredibly useful for
@@ -49,23 +49,23 @@ export const showNotification = (notification) => {
 //   }
 // }
 
-export const actions = {
-  showNotification
-}
+// export const actions = {
+//   showNotification
+// }
 
 // ------------------------------------
 // Action Handlers
 // ------------------------------------
-const ACTION_HANDLERS = {
-  [GAME_SHOW_NOTIFICATION] : (state, action) => action.payload
-}
+// const ACTION_HANDLERS = {
+//   [GAME_SHOW_NOTIFICATION] : (state, action) => action.payload
+// }
 
 // ------------------------------------
 // Reducer
 // ------------------------------------
-const initialState = { text:'',type:'success' }
-export default function gameReducer (state = initialState, action) {
-  const handler = ACTION_HANDLERS[action.type]
+// const initialState = { text:'',type:'success' }
+// export default function gameReducer (state = initialState, action) {
+//   const handler = ACTION_HANDLERS[action.type]
 
-  return handler ? handler(state, action) : state
-}
+//   return handler ? handler(state, action) : state
+// }

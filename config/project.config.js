@@ -51,6 +51,11 @@ const config = {
     'react-router',
     'redux'
   ],
+  compiler_alias : {
+    "react": "preact-compat",
+    "react-dom": "preact-compat"
+  },
+  
 
   // ----------------------------------
   // Test Configuration

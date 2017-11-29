@@ -15,14 +15,12 @@ import './signup-container.css'
 import { GAMES_PATH } from 'constants'
 // import SignupForm from '../components/SignupForm'
 
-// Initialize the FirebaseUI Widget using Firebase.
 
-
-@UserIsNotAuthenticated // redirect to list page if logged in
+// @UserIsNotAuthenticated // redirect to list page if logged in
 @firebaseConnect() // add this.props.firebase
 @connect( // map redux state to props
-  ({firebase}) => ({
-    authError: pathToJS(firebase, 'authError')
+  ({firebase: {authError}}) => ({
+    authError
   })
 )
 export default class Signup extends Component {

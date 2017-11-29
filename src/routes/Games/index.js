@@ -12,10 +12,10 @@ export default (store) => ({
       /*  Webpack - use require callback to define
           dependencies for bundling   */
       const Games = require('./containers/GamesContainer').default
-      const reducer = require('./routes/Game/modules/game').default
+      // const reducer = require('./routes/Game/modules/game').default
 
       /*  Add the reducer to the store on key 'counter'  */
-      injectReducer(store, { key: 'notification', reducer })      
+      // injectReducer(store, { key: 'notification', reducer })      
 
       /*  Return getComponent   */
       cb(null, Games)

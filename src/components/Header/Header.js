@@ -17,10 +17,10 @@ import {
 
 @firebaseConnect()
 @connect(
-  ({ firebase }) => ({
-    authError: pathToJS(firebase, 'authError'),
-    auth: pathToJS(firebase, 'auth'),
-    account: pathToJS(firebase, 'profile')
+  ({ firebase: { auth, authError, profile } }) => ({
+    authError,
+    auth,
+    profile
   })
 )
 export default class Header extends Component {
@@ -34,21 +34,23 @@ export default class Header extends Component {
   }
 
   render(){
-    const { account } = this.props
-    const accountExists = isLoaded(account) && !isEmpty(account) 
+    const { profile } = this.props
+    const accountExists = isLoaded(profile) && !isEmpty(profile)
+    const accountLink = accountExists ? 
+      (<Link to={ACCOUNT_PATH} activeClassName='route--active'>
+        Account
+       </Link>) : null
     return(
-      <div>
+      <div className="posr" style={{zIndex:2}}>
         <IndexLink to='/' activeClassName='route--active'>
           Home
         </IndexLink>
         {' · '}
-        <Link to={accountExists ? ACCOUNT_PATH : LOGIN_PATH} activeClassName='route--active'>
-          {accountExists ? 'Account' : 'Login'}
-        </Link>    
-        {' · '}
         <Link to={GAMES_PATH} activeClassName='route--active'>
           Game Lobby
-        </Link>    
+        </Link>
+        {' · '}
+        {accountLink}     
       </div>
     )
   }

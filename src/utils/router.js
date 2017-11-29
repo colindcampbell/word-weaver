@@ -3,56 +3,43 @@ import { browserHistory } from 'react-router'
 import { SIGNUP_PATH } from 'constants'
 import { pathToJS } from 'react-redux-firebase'
 import LoadingSpinner from 'components/LoadingSpinner'
+import { showNotification } from 'store/notification'
 
 const AUTHED_REDIRECT = 'AUTHED_REDIRECT'
 const UNAUTHED_REDIRECT = 'UNAUTHED_REDIRECT'
 
-/**
- * @description Higher Order Component that redirects to `/login` instead
- * rendering if user is not authenticated (default of redux-auth-wrapper).
- * @param {Component} componentToWrap - Component to wrap
- * @return {Component} wrappedComponent
- */
-export const UserIsAuthenticated = UserAuthWrapper({ // eslint-disable-line new-cap
+export const UserIsAuthenticated = UserAuthWrapper({
   wrapperDisplayName: 'UserIsAuthenticated',
-  LoadingComponent: LoadingSpinner,
-  authSelector: ({ firebase }) => pathToJS(firebase, 'auth'),
-  authenticatingSelector: ({ firebase }) =>
-    (pathToJS(firebase, 'auth') === undefined) ||
-    (pathToJS(firebase, 'isInitializing') === true),
-  predicate: auth => auth !== null,
-  redirectAction: newLoc => (dispatch) => {
+  failureRedirectPath: '/',
+  authSelector: ({ firebase: { auth } }) => auth,
+  authenticatingSelector: ({ firebase: { auth, isInitializing } }) =>
+    isInitializing === true || auth === undefined,
+  predicate: auth => auth !== null && auth.isEmpty === false,
+  redirectAction: (newLoc) => (dispatch) => {
     browserHistory.replace(newLoc)
-    dispatch({
-      type: UNAUTHED_REDIRECT,
-      payload: { message: 'User is not authenticated.' }
-    })
-  }
+    dispatch(showNotification({ text: 'Please login to view that page', type:'error' }))
+    // routerActions.replace // if using react-router-redux
+    // dispatch({
+    //   type: 'SHOW_NOTIFICATION',
+    //   payload: { text: 'You must be authenticated.', type:'error' },
+    // })
+  },
 })
 
-/**
- * @description Higher Order Component that redirects to listings page or most
- * recent route instead rendering if user is not authenticated. This is useful
- * routes that should not be displayed if a user is logged in, such as the
- * login route.
- * @param {Component} componentToWrap - Component to wrap
- * @return {Component} wrappedComponent
- */
-export const UserIsNotAuthenticated = UserAuthWrapper({ // eslint-disable-line new-cap
+export const UserIsNotAuthenticated = UserAuthWrapper({
   wrapperDisplayName: 'UserIsNotAuthenticated',
   allowRedirectBack: false,
-  LoadingComponent: LoadingSpinner,
-  failureRedirectPath: (state, props) =>
-    // redirect to page user was on or to home path
-    props.location.query.redirect || '/',
-  authSelector: ({ firebase }) => pathToJS(firebase, 'auth'),
-  authenticatingSelector: ({ firebase }) =>
-    (pathToJS(firebase, 'auth') === undefined) ||
-    (pathToJS(firebase, 'isInitializing') === true),
-  predicate: auth => auth === null,
-  redirectAction: newLoc => (dispatch) => {
+  failureRedirectPath: '/games',
+  authSelector: ({ firebase: { auth } }) => auth,
+  authenticatingSelector: ({ firebase: { auth, isInitializing } }) =>
+    isInitializing === true || auth === undefined,
+  predicate: auth => auth === null || auth.isEmpty === true,
+  redirectAction: (newLoc) => (dispatch) => {
     browserHistory.replace(newLoc)
-    dispatch({ type: AUTHED_REDIRECT })
+    dispatch({
+      type: 'AUTHED_REDIRECT',
+      payload: { message: 'User is authenticated. Redirecting to games...' }
+    })
   }
 })
 

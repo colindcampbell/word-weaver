@@ -14,7 +14,7 @@ export const createRoutes = (store) => ({
   indexRoute  : Home,
   childRoutes : [
     GamesRoute(store),
-    SignupRoute,
+    // SignupRoute,
     AccountRoute
   ]
 })

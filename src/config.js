@@ -1,4 +1,4 @@
-export const firebase = {
+export const fbConfig = {
   apiKey: "AIzaSyD01cdKDKf3mD37WR5rfcPSm5ZjBHhXJVA",
   authDomain: "word-weaver.firebaseapp.com",
   databaseURL: "https://word-weaver.firebaseio.com",
@@ -9,7 +9,7 @@ export const firebase = {
 
 // Config for react-redux-firebase
 // For more details, visit https://prescottprue.gitbooks.io/react-redux-firebase/content/config.html
-export const reduxFirebase = {
+export const rrfConfig = {
   userProfile: 'users', // root that user profiles are written to
   enableLogging: false, // enable/disable Firebase Database Logging
   updateProfileOnLogin: true // enable/disable updating of profile on login
@@ -18,4 +18,4 @@ export const reduxFirebase = {
 
 export const env = 'development'
 
-export default { firebase, reduxFirebase, env }
+export default { fbConfig, rrfConfig, env }

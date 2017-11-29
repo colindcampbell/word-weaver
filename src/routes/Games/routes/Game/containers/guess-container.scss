@@ -2,25 +2,18 @@
   width: 40px;
   height: 40px;
   position: absolute;
-  perspective: 1000px;
   left: 0;
   bottom: 10px;
-  transition:transform 250ms;
   cursor: pointer;
+  transition: 300ms;
 }
 
 #cube {
   width: 100%;
   height: 100%;
   position: absolute;
-  transform-style: preserve-3d;
-}
-
-#cube figure {
   border-radius: 4px;
   margin: 0;
-  width: 40px;
-  height: 40px;
   display: block;
   position: absolute;
   border: 2px solid #666;
@@ -30,21 +23,17 @@
   font-size: 32px;
   line-height: 38px;
   color: #000;
-  backface-visibility: hidden;
 }
 
-#cube .front  { transform: rotateY(   0deg ) translateZ( 20px ); }
-#cube .back   { transform: rotateX( 180deg ) translateZ( 20px ); }
-#cube .right  { transform: rotateY(  90deg ) translateZ( 20px ); }
-#cube .left   { transform: rotateY( -90deg ) translateZ( 20px ); }
-#cube .top    { transform: rotateX(  90deg ) translateZ( 20px ); }
-#cube .bottom { transform: rotateX( -90deg ) translateZ( 20px ); }
-
-#cube.show-0  { transform: translateZ( -20px ) rotateY(    0deg ); }
-#cube.show-1  { transform: translateZ( -20px ) rotateX( -180deg ); }
-#cube.show-2  { transform: translateZ( -20px ) rotateY(  -90deg ); }
-#cube.show-3  { transform: translateZ( -20px ) rotateY(   90deg ); }
-#cube.show-4  { transform: translateZ( -20px ) rotateX(  -90deg ); }
-#cube.show-5  { transform: translateZ( -20px ) rotateX(   90deg ); }
-
-#cube { transition: transform 300ms; }
+.timer-bar{
+  background:linear-gradient(to left,#007AD5 30%,#009B90 70%);
+  &:before{
+    content:'';
+    position:absolute;
+    top:-2px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255,255,255,.3)
+  }
+}

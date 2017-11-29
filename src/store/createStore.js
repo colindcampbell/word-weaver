@@ -3,7 +3,9 @@ import thunk from 'redux-thunk'
 import { browserHistory } from 'react-router'
 
 import { reactReduxFirebase, getFirebase } from 'react-redux-firebase'
-import { firebase as fbConfig, reduxFirebase as reduxConfig } from '../config'
+import { fbConfig, rrfConfig } from '../config'
+import * as firebase from 'firebase'
+firebase.initializeApp(fbConfig)
 
 import makeRootReducer from './reducers'
 import { updateLocation } from './location'
@@ -39,7 +41,7 @@ export default (initialState = {}) => {
     initialState,
     composeEnhancers(
       applyMiddleware(...middleware),
-      reactReduxFirebase(fbConfig, reduxConfig),
+      reactReduxFirebase(firebase, rrfConfig),
       ...enhancers
     )
   )
