@@ -14,6 +14,7 @@ import { UserIsAuthenticated } from 'utils/router'
 import { getRandomNumber, shuffleLetters } from 'utils/helpers'
 import LoadingSpinner from 'components/LoadingSpinner'
 import Player from '../components/Player'
+import GameMessage from '../components/GameMessage'
 // import Radium from 'radium'
 import './guess-container.scss'
 
@@ -21,7 +22,7 @@ const populates = [
   { child: 'players', root: 'users', keyProp: 'uid' },
   { child: 'createdBy', root: 'users', keyProp: 'uid' },
   { child: 'currentGamePlayers', root: 'gamePlayers', keyProp: 'gameid'},
-  { child: 'currentGameRound', root: 'gameRounds'},
+  { child: 'currentGameRound', root: 'gameRounds'}
 ]
 
 @UserIsAuthenticated
@@ -133,7 +134,7 @@ export default class GameContainer extends Component {
       if (!currentGame.open && 
         currentGame.roundTimer === 0 && 
         currentGame.preRoundTimer === 0 && 
-        currentGame.round === this.props.currentGame.round &&
+        // currentGame.round === this.props.currentGame.round &&
         auth.uid === currentGame.createdBy.uid) {
         const { firebase:{update}, params:{gameid} } = this.props
         if (!currentGame.roundFinished) {
@@ -166,7 +167,11 @@ export default class GameContainer extends Component {
       isEmpty(currentGame) || 
       isEmpty(currentGame.currentGamePlayers) || 
       isEmpty(currentGame.currentGameRound) ) {
-      return <LoadingSpinner />
+      return (
+        <div className="posf" style={{top:0,bottom:0,left:0,right:0}}>
+          <LoadingSpinner />
+        </div>
+      )
     }
 
     const { currentGameRound, currentGamePlayers } = currentGame,
@@ -195,6 +200,24 @@ export default class GameContainer extends Component {
             .filter(gp => currentGame.currentGamePlayers[gp].hasOwnProperty(authid))[0]]} 
           profile={currentGame.players[authid]} />)
       )
+
+    const gameMessage = !isEmpty(currentGame.players) && 
+      !isEmpty(currentGame.currentGamePlayers) && 
+      Object.keys(currentGame.players).length === Object.keys(currentGame.currentGamePlayers).length && 
+      (<GameMessage 
+        gameOver={currentGame.gameOver}
+        open={currentGame.open}
+        mode={currentGame.mode}
+        loading={currentGame.loading}
+        roundFinished={currentGame.roundFinished}
+        ready={currentGame.ready[auth.uid]}
+        roundTimer={currentGame.roundTimer}
+        preRoundTimer={currentGame.preRoundTimer}
+        winner={currentGame.winner}
+        color={currentGamePlayers[currentPlayerKey].color}
+        round={currentGame.round}
+        playerReady={this.playerReady}
+      />)
 
     return(
       <div style={{ margin: '0 auto'}} >
@@ -228,47 +251,13 @@ export default class GameContainer extends Component {
             }
           </div>
         </div>
-        {currentGame.open && 
-          (<div className="df aic jcc" style={styles.message}>Waiting for Another Player to Join</div>)
-        }
-        {currentGame.gameOver && 
-         currentGame.mode === 'duo-vs' &&
-          (<div className="df aic acc jcc fww" style={styles.message}>
-            <span style={{width:"100%",textAlign:"center",marginBottom:10}}>{`The winner is ${currentGame.winner}!`}</span>
-            <Link to={GAMES_PATH} className="button" style={Object.assign( {}, styles.button, {color:"#ffffff",background:currentGamePlayers[currentPlayerKey].color} )}>
-              Game Lobby
-            </Link>
-          </div>)
-        }
-        {currentGame.preRoundTimer === 0 && 
-         currentGame.roundTimer === 0 &&
-         currentGame.ready[auth.uid] === false &&
-         currentGame.roundFinished === true &&
-         !currentGame.gameOver &&
-          (<div className="df aic acc jcc fww" style={styles.message}>
-            <span style={{width:"100%",textAlign:"center",marginBottom:10}}>{`Are you ready for round ${currentGame.round + 2}?`}</span>
-            <div className="button" onClick={this.playerReady.bind(this)} style={Object.assign( {}, styles.button, {background:currentGamePlayers[currentPlayerKey].color} )}>Ready!</div>
-          </div>)
-        }
-        {currentGame.preRoundTimer === 0 && 
-         currentGame.roundTimer === 0 &&
-         currentGame.ready[auth.uid] === true &&
-         currentGame.roundFinished === true &&
-         !currentGame.gameOver &&
-          (<div className="df aic acc jcc fww" style={styles.message}>{`Waiting for ${currentGame.players[Object.keys(currentGame.players).filter(key => key !== auth.uid)].displayName}`}
-          </div>)
-        }
+        {(currentGame.preRoundTimer > 0 || currentGame.gameOver || currentGame.open || currentGame.loading || currentGame.roundFinished) && gameMessage}
         {!currentGame.roundFinished && 
          currentGame.roundTimer > 0 &&
          currentGame.preRoundTimer === 0 &&
          !currentGame.gameOver &&
-         (
-        <div>
-          <div className="posr" style={{width:290,height:120,textAlign:"left",margin:"0 auto"}}>
+         (<div className="posr" style={{width:290,height:120,textAlign:"left",margin:"0 auto"}}>
             {keywordLetters.map((letter, index) => {
-              if (shuffled === 'LOADING') {
-                return <LoadingSpinner />
-              }
               !letterCount.hasOwnProperty(letter) ? letterCount[letter] = 0 : letterCount[letter]++
               return(
                 <section 
@@ -281,20 +270,14 @@ export default class GameContainer extends Component {
                   onMouseDown={ guess.indexOf(letter) > -1 ? 
                     this.removeLetterFromGuess.bind(this, letter, this.state.guess.indexOf(letter)) : 
                     this.addLetterToGuess.bind(this, letter, this.state.shuffled.indexOf(letter)) } >
-                  <div id="cube">
+                  <div class="cube">
                     {letter}
                   </div>
                 </section>
               )}
             )}
           </div>
-        </div>
         )}
-        {currentGame.preRoundTimer > 0 && 
-         !currentGame.open &&
-         !currentGame.gameOver &&
-          (<div className="df aic jcc" style={styles.message}>Round starts in {currentGame.preRoundTimer}
-          </div>)}        
         <div className="posr" style={{width:"100%",maxWidth:"1200px",margin:"0 auto"}}>
           <div className="posa" style={{width:"100%",zIndex:1,bottom:2}}>
             <div style={{width:"calc(50% + 2px)",borderRight:"4px solid rgba(255,255,255,.3)",height:36}}></div>
@@ -317,6 +300,7 @@ export default class GameContainer extends Component {
     const { currentGamePlayers, currentGameRound } = currentGame,
           currentRound = currentGameRound[Object.keys(currentGameRound)[0]],
           currentPlayer = currentGamePlayers[currentPlayerKey]
+    if (guess.length < 3) { return }
     // Reset Guess
     this.resetGuess()
     let guessTaken = Object.keys(currentRound.taken).filter(i => (currentRound.taken[i] !== undefined && currentRound.taken[i].word === guess))
@@ -512,12 +496,5 @@ const styles = {
   button:{
     padding:"8px 32px",
     margin:"0 auto 10px"
-  },
-  message:{
-    color:'#456',
-    fontSize:28,
-    height:120,
-    fontWeight:"bold",
-    letterSpacing:"-1px"
   }
 }

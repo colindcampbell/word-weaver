@@ -78,12 +78,12 @@ export default class Games extends Component {
     const newGame = {}
     newGame.open = mode === 'solo' ? false : true
     newGame.mode = mode
-    newGame.players = {}
     newGame.round = 0
     newGame.roundFinished = false
     newGame.gameOver = false
     newGame.winner = ''
     // add current user to game
+    newGame.players = {}
     newGame.players[auth.uid] = auth.uid
     return firebase.pushWithMeta('games', newGame)
       .then(data => {
@@ -99,7 +99,7 @@ export default class Games extends Component {
     const { firebase:{update}, auth } = this.props
     return update(`${GAMES_PATH}/${gameId}/players`, {[auth.uid]:auth.uid })
       .then(snap => {
-        return update(`${GAMES_PATH}/${gameId}`, {open:false})
+        return update(`${GAMES_PATH}/${gameId}`, {open:false,loading:true})
       })
       .then(snap => {
         this.context.router.push(`${GAMES_PATH}/${gameId}`)

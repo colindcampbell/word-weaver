@@ -150,8 +150,10 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
     const key = snap.key;
     const updates = { [key]: true };
     return admin.database().ref(`games/${event.params.gid}/currentGamePlayers`).update(updates);
-  }).then(snap => {
+  }).then(() => {
     return admin.database().ref(`games/${event.params.gid}/ready/`).update({[event.params.uid]:false});
+  }).then(() => {
+    return admin.database().ref(`games/${event.params.gid}`).update({loading:false});
   }).catch(e => {
   	console.log(e);
   })
