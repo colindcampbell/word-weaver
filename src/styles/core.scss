@@ -6,9 +6,39 @@
   // @import 'standard-classes';
   @import '~normalize.css/normalize';
   @import url(https://fonts.googleapis.com/css?family=Gudea:400,600,700);
+  
+  $primaryColor1: #007AD5;
+  $primaryColor2: #009B90;
+  $primaryColor3: #5A00F0;
+  $primaryColor4: #445566;
 
-  // Some best-practice CSS that's useful for most apps
-  // Just remove them if they're not what you want
+  $tablet-large:             1025px;
+  $tablet:                   768px;
+  $phone-large:              481px;
+  $phone:                    320px;
+
+  $breakpoints: (
+    'phone':         ( max-width:  321px ),
+    'phone-large':   ( max-width:  491px ),
+    'tablet':        ( max-width:  767px ),
+    'tablet-large':  ( max-width: 1024px )
+  ) !default;
+
+  @mixin breakpoint($breakpoint) {
+    // If the key exists in the map
+    @if map-has-key($breakpoints, $breakpoint) {
+      // Prints a media query based on the value
+      @media #{inspect(map-get($breakpoints, $breakpoint))} {
+        @content;
+      }
+    }
+    // If the key doesn't exist in the map
+    @else {
+      @warn "Unfortunately, no value could be retrieved from `#{$breakpoint}`. "
+          + "Available breakpoints are: #{map-keys($breakpoints)}.";
+    }
+  }
+
   html {
     box-sizing: border-box;
   }
@@ -18,7 +48,9 @@
     margin: 0;
     padding: 0;
     height:100%;
+    overflow: hidden;
     background: #dfefff;
+    color:$primaryColor4;
     background: -moz-radial-gradient(center, ellipse cover, #dfefff 0%,#9ab 100%);
     background: -webkit-radial-gradient(center, ellipse cover, #dfefff 0%,#9ab 100%);
     background: radial-gradient(ellipse at center, #dfefff 0%,#9ab 100%);
@@ -29,10 +61,14 @@
     background-size: cover;  
   }
   a {
-    text-decoration: none !important;
+    text-decoration: none;
     &:visited {
       text-decoration: none;
       color: inherit;
+    }
+    &.text-link{
+      text-decoration: underline;
+      color:$primaryColor1;
     }
   }
   *,
@@ -46,22 +82,48 @@
   h1,h2,h3,h4,h5,h6{
     margin:0
   }
+  input{
+    font-family: 'Gudea', 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
 
   // LAYOUT
   .df{display: flex;}
   .aic{align-items: center;}
   .acc{align-content: center;}
   .acfe{align-content: flex-end;}
+  .aifs{align-items: flex-start;}
   .aife{align-items: flex-end;}
   .jcc{justify-content: center;}
+  .jcfs{justify-content: flex-start;}
+  .jcfe{justify-content: flex-end;}
   .f1{flex:1}
   .fww{flex-wrap: wrap;}
   .fwnw{flex-wrap: nowrap;}
+  .fdc{flex-direction: column;}
   .jcsb{justify-content: space-between;}
+
+  .db{display: block;}
+  .dib{display: inline-block;}
+
+  .m0a{margin:0 auto;}
+
+  .w100{width: 100%;}
+  .w50{width: 50%;}
+  .w50-r{width: 50%;}
+  .w33-r{width: 33%;}
+  .h100{height: 100%;}
+  .ovfs{overflow: scroll;}
+
+  .tac{text-align: center;}
+  .tal{text-align: left;}
+  .ttuc{text-transform: uppercase;}
+  .vam{vertical-align: middle;}
 
   .posr{position: relative;}
   .posa{position: absolute;}
   .posf{position: fixed;}
+
+  .fwb{font-weight: bold;}
 
   // Compontents
   .button{
@@ -72,7 +134,7 @@
     text-align: center;
     letter-spacing: -1px;
     font-size: 22px;
-    background: rgba(#456,.6);
+    background: rgba($primaryColor4,.6);
     opacity: .9;
     color: #ffffff;
     transition:200ms;
@@ -90,6 +152,45 @@
         transform:none;
       }
     }
+    &.small{
+      padding:8px 16px;
+      font-size: 18px;
+    }
+  }
+  .bgP1{background: $primaryColor1;}
+  .bgP2{background: $primaryColor2;}
+  .bgP3{background: $primaryColor3;}
+  .op1{opacity:.1}
+  .op2{opacity:.2}
+  .op3{opacity:.3}
+  .op4{opacity:.4}
+  .op5{opacity:.5}
+  .op6{opacity:.6}
+  .op7{opacity:.7}
+  .op8{opacity:.8}
+  .op9{opacity:.9}
+
+  .leader{
+    border-radius: 3px;
+    font-weight: 700;
+    padding:10px 10px;
+    text-align: center;
+    letter-spacing: -1px;
+    font-size: 20px;
+    background: rgba($primaryColor4,.8);
+    opacity: 1;
+    color: #ffffff;
+    transition:200ms;
+    box-shadow:0 2px 10px -5px rgba(0,0,0,.5);
+  }
+
+  @include breakpoint('tablet-large') {
+    .w33-r{width: 50%;}
+  }
+
+  @include breakpoint('tablet') {
+    .w50-r{width: 100%;}
+    .w33-r{width: 100%;}
   }
 
 }

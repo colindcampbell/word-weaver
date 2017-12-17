@@ -1,33 +1,24 @@
 import React, { PropTypes } from 'react'
 import { Field, reduxForm } from 'redux-form'
 import { ACCOUNT_FORM_NAME } from 'constants'
-import ProviderDataForm from '../ProviderDataForm'
+import { Link } from 'react-router'
+// import ProviderDataForm from '../ProviderDataForm'
 // import classes from './AccountForm.scss'
 
-export const AccountForm = ({ account, handleSubmit, submitting }) => (
+export const AccountForm = ({ account, handleSubmit, submitting, onLogout }) => (
   <form onSubmit={handleSubmit}>
-    <h4>Account</h4>
-    <div>
-      <label htmlFor="displayName">Display Name</label>
-      <Field name="displayName" component="input" type="text" value={account.displayName}/>    
-    </div> 
-    <div>
-      <label htmlFor="email">Email</label>
-      <Field name="email" component="input" type="email" value={account.email}/>    
+    <div style={{marginBottom:10}}>
+      <label style={{fontSize:18}} htmlFor="userName">Display Name: </label>
+      <Field style={{padding:3,borderRadius:2,border:"none",boxShadow:"0 1px 5px -2px rgba(0,0,0,.5)",fontSize:18}} name="userName" component="input" type="text" maxlength="24" value={account.userName}/>    
     </div>
-    {
-      !!account && !!account.providerData &&
-        <div>
-          <h4>Linked Accounts</h4>
-          <ProviderDataForm
-            providerData={account.providerData}
-          />
-        </div>
-    }
     <button
+      className="button small bgP2"
       label='Save'
       type='submit'
-    >Submit</button>
+      style={{marginRight:5,border:"none"}}
+    >Update</button>
+    <div className="button small bgP1 dib" style={{marginRight:5}} onClick={onLogout}>Logout</div>
+    <Link style={{color:"#ffffff"}} className="button small bgP3 dib" to="/games">Back</Link>
   </form>
 )
 

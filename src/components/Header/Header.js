@@ -34,23 +34,24 @@ export default class Header extends Component {
   }
 
   render(){
-    const { profile } = this.props
+    const { profile, auth } = this.props
     const accountExists = isLoaded(profile) && !isEmpty(profile)
+    if(this.context.router.location.pathname === "/"){
+      return(<div></div>)
+    }
     const accountLink = accountExists ? 
-      (<Link to={ACCOUNT_PATH} activeClassName='route--active'>
+      (<Link to={ACCOUNT_PATH} className="df aic fwb" style={{fontSize:19,letterSpacing:"-1px"}}>
+        {profile.userName}<img src={ profile.avatarUrl } style={{width:28,height:28,borderRadius:2,marginLeft:8}} />
+       </Link>) : (<Link to={ACCOUNT_PATH} className="df aic fwb" style={{fontSize:19,letterSpacing:"-1px"}}>
         Account
-       </Link>) : null
+       </Link>)
     return(
-      <div className="posr" style={{zIndex:2}}>
-        <IndexLink to='/' activeClassName='route--active'>
-          Home
+      <div>
+        <IndexLink to={GAMES_PATH} className="posf" style={{left:6,top:6,zIndex:2}}>
+          <img src={require('../../assets/wordweaver-logo.svg')} style={{height:40}} alt="WordWeaver"/>
         </IndexLink>
-        {' · '}
-        <Link to={GAMES_PATH} activeClassName='route--active'>
-          Game Lobby
-        </Link>
-        {' · '}
-        {accountLink}     
+        <div className="posf" style={{right:6,top:6,zIndex:2}}>{accountLink}
+        </div>   
       </div>
     )
   }

@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 
+// When both players click the ready button load a new round. Incrementing the round triggers the populateRoundWords function
 exports.allPlayersReady = functions.database.ref('/games/{gid}/ready').onWrite(event => {
   if (!event.data.exists()) {
     return;
@@ -21,7 +22,12 @@ exports.allPlayersReady = functions.database.ref('/games/{gid}/ready').onWrite(e
   return
 })
 
+// When the timer expires reveal the hidden words and end the game or allow players to indicate they are ready for the next round
 exports.roundFinished = functions.database.ref('/games/{gid}/roundFinished').onWrite(event => {
+  if (!event.data.exists()) {
+    // TODO: delete '/gamePlayers/gid/uid', set game open to true, 
+    return;
+  }  
   const isFinished = event.data.val()
   if (isFinished) {
     const game = event.data.ref.parent.child('currentGameRound');
@@ -30,9 +36,9 @@ exports.roundFinished = functions.database.ref('/games/{gid}/roundFinished').onW
       gameRoundKey = Object.keys(snap.val())[0]
       return admin.database().ref('/gameRounds/'+gameRoundKey).once('value')
     }).then(snap => {
-      const round = snap.val();
+      const round = snap.val()
       // For co-op and single player check to see if they got one of the longest words
-      canMoveOn = Object.keys(round.taken).filter(i => round.taken[i].length > 5).length > 0
+      canMoveOn = Object.keys(round.taken).filter(i => round.taken[i].word.length === 6).length > 0
       // Reveal all of the words that weren't guessed
       const taken = Object.assign({},round.taken);
       round.bank.forEach((wordObj, i) => {
@@ -57,16 +63,14 @@ exports.roundFinished = functions.database.ref('/games/{gid}/roundFinished').onW
       return admin.database().ref(`games/${event.params.gid}`).update(updates)
     }).catch(e => {
       console.log(e)
-    });
-    // Game Over logic
+    })
   }else{
     return
   }
 })
 
 // See function newSubmit in GamesContainer.js
-// Populates the words when a new game is created
-// TODO: populate only when game is full (max players)
+// Populates the words when a new game is created or when a new round is starting
 exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrite(event => {
   // Only edit data when it is first created.
   // if (event.data.previous.exists()) {
@@ -80,17 +84,14 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
   }
   const roundIndex = event.data.val()
   const wordIndex = getRandomNumber(9099)
-  let keyword = ''
-  let newKey
-  let roundTime
+  let keyword = '', newKey, roundTime, points
   return admin.database().ref('/wordBank/'+ wordIndex).once('value').then(snap => {
     keyword = snap.val()
     return admin.database().ref('/word/'+ keyword).once('value')
   }).then(snap => {
     const bank = snap.val()
-    bank[bank.length] = keyword;
-    // const sortedBank = sortList(bank)
-    const points = assignPointValues(sortList(bank))
+    bank[bank.length] = keyword
+    points = assignPointValues(sortList(bank))
     const finalBank = points[0]
 		const shuffled = shuffleLetters(keyword)
     roundTime = getRoundLength(bank.length)
@@ -100,7 +101,8 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
   		bank:finalBank,
   		taken:[{word:'No data'}],
   		finished:false,
-      total:points[1]
+      total:points[1],
+      timestamp:Date.now()
     })
   }).then(snap => {
     newKey = snap.key
@@ -112,18 +114,22 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
       roundFinished:false
     })
   }).then(snap => {
-    return admin.database().ref(`games/${event.params.gid}/ready`).once('value')
+    return admin.database().ref(`games/${event.params.gid}`).once('value')
   }).then(snap => {
-  	const ready = snap.val()
-    Object.keys(ready).forEach(key => {
-      ready[key] = false
-    })
-    return admin.database().ref(`games/${event.params.gid}`).update({ready:ready,loading:false})
+  	const game = snap.val(),
+          ready = game.ready,
+          round = game.round,
+          updates = {loading:false,ready:{}}
+    if (round > 0) {
+      Object.keys(ready).forEach(key => { updates.ready[key] = false })
+    }
+    return admin.database().ref(`games/${event.params.gid}`).update(updates)
   }).catch(e => {
   	console.log(e)
   })
 })
 
+// Create a record in the gamePlayers object in Firebase that holds the specific info about that player for that game (score, color, notification, etc.)
 exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onWrite(event => {
   // Exit when the data is deleted.
   if (!event.data.exists()) {
@@ -131,19 +137,25 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
     return;
   }
   // Get players count
-  let playersCount
-  const colors = ["#007AD5","#009B90","#5A00F0"];
-  return admin.database().ref(`/games/${event.params.gid}/players`).once('value').then(snap => {
-  	playersCount = Object.keys(snap.val()).length
-	  return admin.database().ref(`/gamePlayers`)
-	  	.push({
-	  		score:0,
-	  		color:colors[playersCount - 1],
-	  		notification:{text:'Joined Game',type:'success'},
-        ready:true,
+  let playerCount, mode
+  const gameMode = `/games/${event.params.gid}/mode`,
+        colors = ["#007AD5","#009B90","#5A00F0"]
+  return admin.database().ref(gameMode).once('value').then(snap => {
+    mode = snap.val()
+    return admin.database().ref(`/games/${event.params.gid}/players`).once('value')
+  }).then(snap => {
+    playerCount = Object.keys(snap.val()).length
+    color = mode === 'solo' ? colors[2] : colors[playerCount - 1]
+    return admin.database().ref(`/gamePlayers`)
+      .push({
+        score:0,
+        roundScore:0,
+        color:color,
+        notification:{text:'Joined Game',type:'success'},
         [event.params.uid]:true,
-        playerKey:event.params.uid
-	  	})
+        playerKey:event.params.uid,
+        timestamp:Date.now()
+      })
   }).then(snap => {
     // TODO: change to 3
     // Start Game
@@ -153,11 +165,83 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
   }).then(() => {
     return admin.database().ref(`games/${event.params.gid}/ready/`).update({[event.params.uid]:false});
   }).then(() => {
-    return admin.database().ref(`games/${event.params.gid}`).update({loading:false});
+    return admin.database().ref(`games/${event.params.gid}`).update({loading:false,playerCount:playerCount});
   }).catch(e => {
   	console.log(e);
   })
 })
+
+// Sets high score to 0 when a user is created
+exports.setUserData = functions.database.ref('/users/{uid}').onWrite(event => {
+  // Only edit data when it is first created.
+  if (!event.data.exists()) {
+    // TODO: delete '/gamePlayers/gid/uid', set game open to true, 
+    return;
+  }  
+  if (event.data.previous.exists()) {
+    return;
+  }
+  const user = event.data.val();
+  return admin.database().ref(`/users/${event.params.uid}`).update({wins:0,highScore:0,highScoreDuo:0,userName:user.displayName}).catch(e => {
+    console.log(e)
+  })
+})
+
+const CUT_OFF_TIME = 4 * 60 * 60 * 1000; // 4 Hours in milliseconds.
+/**
+ * This database triggered function will check for child nodes that are older than the
+ * cut-off time. Each child needs to have a `timestamp` attribute.
+ */
+exports.deleteOldGames = functions.database.ref('/games/{pushId}')
+  .onWrite(event => {
+    const ref = event.data.ref.parent; // reference to the items
+    const now = Date.now();
+    const cutoff = now - CUT_OFF_TIME;
+    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+    return oldItemsQuery.once('value').then(snapshot => {
+      // create a map with all children that need to be removed
+      const updates = {};
+      snapshot.forEach(child => {
+        updates[child.key] = null;
+      });
+      // execute all updates in one go and return the result to end the function
+      return ref.update(updates);
+    });
+  });
+
+exports.deleteOldGamePlayers = functions.database.ref('/gamePlayers/{pushId}')
+  .onWrite(event => {
+    const ref = event.data.ref.parent; // reference to the items
+    const now = Date.now();
+    const cutoff = now - CUT_OFF_TIME;
+    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+    return oldItemsQuery.once('value').then(snapshot => {
+      // create a map with all children that need to be removed
+      const updates = {};
+      snapshot.forEach(child => {
+        updates[child.key] = null;
+      });
+      // execute all updates in one go and return the result to end the function
+      return ref.update(updates);
+    });
+  }); 
+
+exports.deleteOldGameRounds = functions.database.ref('/gameRounds/{pushId}')
+  .onWrite(event => {
+    const ref = event.data.ref.parent; // reference to the items
+    const now = Date.now();
+    const cutoff = now - CUT_OFF_TIME;
+    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+    return oldItemsQuery.once('value').then(snapshot => {
+      // create a map with all children that need to be removed
+      const updates = {};
+      snapshot.forEach(child => {
+        updates[child.key] = null;
+      });
+      // execute all updates in one go and return the result to end the function
+      return ref.update(updates);
+    });
+  });  
 
 const getRandomNumber = (n) => {
   const MAX_RANDOM = Math.pow(2, 30);
@@ -179,16 +263,13 @@ const shuffleLetters = (keyword) => {
 }
 
 const getRoundLength = (n) => {
-  let length
-  switch(n){
-    case n >= 45 && n < 60:
-      length = 105;
-      break;
-    case n >= 60:
-      length = 120;
-      break;
-    default:
-      length = 90;
+  let length = 90
+  if(n >= 40 && n < 50){
+    length = 100;
+  }else if (n >= 50 && n < 60) {
+    length = 110;
+  }else if (n >= 60) {
+    length = 120;
   }
   return length
 }

@@ -10,7 +10,7 @@ import {
 
 export default class GameMessage extends Component {
   render() {
-    const { gameOver, open, mode, loading, roundFinished, ready, roundTimer, preRoundTimer, winner, color,round, playerReady } = this.props
+    const { gameOver, open, mode, loading, roundFinished, ready, roundTimer, preRoundTimer, winner, color,round, playerReady, score, totalScoreDuo } = this.props
 
     if (loading) {
       return (
@@ -33,6 +33,15 @@ export default class GameMessage extends Component {
             </Link>
           </div>)
         }
+        {gameOver && 
+         mode !== 'duo-vs' &&
+          (<div style={{textAlign:"center"}}>
+            <div style={{width:"100%",marginBottom:10}}>{`Game Over! Final Score: ${mode === 'solo' ? score : totalScoreDuo}`}</div>
+            <Link to={GAMES_PATH} className="button" style={Object.assign( {}, styles.button, {color:"#ffffff",background:color} )}>
+              Game Lobby
+            </Link>
+          </div>)
+        }
         {preRoundTimer === 0 && 
          roundTimer === 0 &&
          ready === false &&
@@ -47,6 +56,7 @@ export default class GameMessage extends Component {
          roundTimer === 0 &&
          ready === true &&
          roundFinished === true &&
+         mode !== 'solo' &&
          !gameOver &&
           (<div>Waiting for the other player</div>)
         }

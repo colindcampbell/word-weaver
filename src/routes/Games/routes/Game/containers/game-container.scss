@@ -1,0 +1,89 @@
+.word-column{
+  font-size:18px;
+  color:#ffffff;
+  min-height:400px;
+  padding:0 20px;
+}
+
+	.word-container{
+	  margin-bottom:4px;
+	  margin-right:10px;
+	  box-shadow: 0px 1px 8px -2px rgba(0,0,0,0.6);
+	}
+
+		.bank-letter-container{
+		  width: 20px;
+		  height: 27px;
+		  margin-right: 1px;
+		  margin-left: 1px;
+		  line-height: 28px;
+		}
+
+			.letter-mask{
+			  left:0;
+			  right:0;
+			  top:0;
+			  bottom:0;
+			  z-index:1px;
+			  border:1px solid #456;
+			  border-radius:2;
+			  background:#ffffff;
+			}
+
+			.bank-letter{
+			  left:0;
+			  right:0;
+			  top:0;
+			  bottom:1px;
+			  z-index:1;
+			  border-radius:2px; 	
+			}
+
+			.letter-bg{
+				left:0;
+				right:0;
+				top:0;
+				bottom:0;
+				z-index:1;
+				border-radius:2px;
+			}
+
+.guess-letter-container{
+  width: 40px;
+  height: 40px;
+  left: 0;
+  bottom: 10px;
+  cursor: pointer;
+  transition: 300ms;
+}
+
+	.cube{
+	  border-radius: 4px;
+	  margin: 0;
+	  display: block;
+	  border: 2px solid #456;
+	  background: #FFF;
+	  font-size: 36px;
+	  line-height: 38px;
+	  color: #000;
+	}
+
+.bg-grad-primary{
+  background:linear-gradient(to left,#007AD5 30%,#009B90 70%)!important;
+}
+
+.timer-bar{
+  @extend .bg-grad-primary;
+  &:before{
+    content:'';
+    position:absolute;
+    top:-2px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255,255,255,.3)
+  }
+  &.duo{
+    background:#5A00F0!important;
+  }
+}

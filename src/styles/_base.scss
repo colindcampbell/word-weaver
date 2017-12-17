@@ -31,6 +31,7 @@ For example:
     height: 100%;
     background-color: $background;
     font-family: 'Roboto', 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    overflow: hidden;
     @include desktop {
       font-size: 15px;
     }
