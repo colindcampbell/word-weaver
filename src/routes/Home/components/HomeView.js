@@ -151,7 +151,12 @@ export default class Signup extends Component {
                     </span>
                     <span className="firebaseui-idp-text firebaseui-idp-text-long">Sign in with Facebook</span>
                     <span className="firebaseui-idp-text firebaseui-idp-text-short">Facebook</span>
-                  </button>
+                  </button>                  
+                  <br/>
+                  <br/>
+                  <div className="tac" style={{color:"#445566",fontSize:10}}>
+                    <a target="_blank" style={{color:"#445566"}} href="/privacypolicy.htm">Privacy Policy</a> | <a target="_blank"  style={{color:"#445566"}} href="/termsofservice.htm">Terms of Service</a>
+                  </div>
                   </li>
                 </ul>
               </div>
@@ -164,6 +169,9 @@ export default class Signup extends Component {
 
 
 }
+
+
+
 
                   // <li className="firebaseui-list-item">
                   //   <button className="firebaseui-idp-button mdl-button mdl-js-button mdl-button--raised firebaseui-idp-password firebaseui-id-idp-button" >

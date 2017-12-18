@@ -10,17 +10,13 @@ import {
 
 export default class GameMessage extends Component {
   render() {
-    const { gameOver, open, mode, loading, roundFinished, ready, roundTimer, preRoundTimer, winner, color,round, playerReady, score, totalScoreDuo } = this.props
-
-    if (loading) {
-      return (
-        <div className="df aic acc jcc fww" style={styles.message}>
-          <LoadingSpinner />
-        </div>)
-    }
+    const { gameOver, open, mode, roundFinished, ready, roundTimer, preRoundTimer, winner, abandoned, color,round, playerReady, score, totalScoreDuo } = this.props
 
     return (
       <div className="df aic acc jcc fww tww" style={styles.message}>
+        {abandoned && 
+          (<div className="tac">The game owner has left.<br/>You will be redirected to the game lobby</div>)
+        }
         {open && 
           (<div>Waiting for another player to join</div>)
         }
@@ -47,8 +43,9 @@ export default class GameMessage extends Component {
          ready === false &&
          roundFinished === true &&
          !gameOver &&
+         !abandoned &&
           (<div>
-            <div style={{width:"100%",textAlign:"center",marginBottom:10}}>{`Are you ready for round ${round + 2}?`}</div>
+            <div style={{width:"100%",textAlign:"center",marginBottom:10}}>{mode === 'duo-vs' && round === 1 ? `Are you ready for the final round?` : `Are you ready for round ${round + 2}?`}</div>
             <div className="button" onClick={playerReady.bind(this)} style={Object.assign( {}, styles.button, {background:color} )}>Ready!</div>
           </div>)
         }
@@ -58,11 +55,12 @@ export default class GameMessage extends Component {
          roundFinished === true &&
          mode !== 'solo' &&
          !gameOver &&
-          (<div>Waiting for the other player</div>)
+          (<div>Waiting for the other player to continue</div>)
         }
         {preRoundTimer > 0 && 
          !open &&
          !gameOver &&
+         !abandoned &&
           (<div>Round starts in {preRoundTimer}</div>)}
       </div>
     )

@@ -76,14 +76,15 @@ export default class Player extends Component {
 const styles = {
   notification:{
     fontWeight:"bold",
-    fontSize:18,
-    letterSpacing:"-.5px"
+    fontSize:22,
+    letterSpacing:"-1px",
   },
   playerName:{
     fontWeight:"bold",
-    fontSize:22,
+    fontSize:24,
     letterSpacing:"-1px",
-    color:"#456"
+    color:"#456",
+    marginBottom:3
   },
   totalScore:{
     fontWeight:"bold",

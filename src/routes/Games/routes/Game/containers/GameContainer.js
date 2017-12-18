@@ -22,7 +22,7 @@ var Sound = require('react-sound').default;
 const populates = [
   { child: 'players', root: 'users', keyProp: 'uid' },
   { child: 'createdBy', root: 'users', keyProp: 'uid' },
-  { child: 'currentGamePlayers', root: 'gamePlayers', keyProp: 'gameid'},
+  { child: 'currentGamePlayers', root: 'gamePlayers'},
   { child: 'currentGameRound', root: 'gameRounds'}
 ]
 
@@ -94,11 +94,12 @@ export default class GameContainer extends Component {
   componentWillReceiveProps(nextProps){
     const { currentGame, auth } = nextProps
     if (isLoaded(currentGame) && 
+        !isEmpty(currentGame) && 
         !isEmpty(currentGame.currentGameRound) && 
         !isEmpty(currentGame.currentGamePlayers) ){
-      const { currentGameRound } = currentGame,
-            currentRound = currentGameRound[Object.keys(currentGameRound)[0]],
-            { currentGamePlayers } = currentGame
+      const { currentGameRound, currentGamePlayers } = currentGame,
+            currentRound = currentGameRound[Object.keys(currentGameRound)[0]]
+
       // Update the jumbled letters when the first round loads or a new round loads
       if (this.state.keyword === false || this.state.keyword !== currentRound.keyword) {
         this.setState({
@@ -107,6 +108,7 @@ export default class GameContainer extends Component {
           guess:''
         })
       }
+
       // Set this.state.currentPlayerKey from currentGamePlayers to know the gamePlayer of the current user
       if (this.state.currentPlayerKey === false && 
         Object.keys(currentGame.players).length === Object.keys(currentGame.currentGamePlayers).length) {
@@ -122,10 +124,11 @@ export default class GameContainer extends Component {
       }
       // Start of first round after the pre round countdown reaches 0. These will only run for the game creator.
       if (!currentGame.open && 
+        !currentGame.abandoned &&
         currentGame.preRoundTimer > 0 && 
         auth.uid === currentGame.createdBy.uid) {
         const { firebase:{update}, params:{gameid} } = this.props
-        if (currentGame.mode !== 'duo-vs' && currentGamePlayers[this.state.currentPlayerKey].roundScore > 0) {
+        if (currentGame.mode !== 'duo-vs' && currentGamePlayers[this.state.currentPlayerKey].roundScore !== 0) {
           // TODO: Update all players
           Object.keys(currentGamePlayers).forEach(key => {
             if (currentGamePlayers[key].roundScore > 0) {
@@ -140,6 +143,7 @@ export default class GameContainer extends Component {
       }
       // Countdown during the playing round
       if (!currentGame.open && 
+        !currentGame.abandoned &&
         currentGame.roundTimer > 0 && 
         currentGame.preRoundTimer === 0 && 
         auth.uid === currentGame.createdBy.uid) {
@@ -173,6 +177,24 @@ export default class GameContainer extends Component {
           this.endStandardGame(update,gameid,totalScore)
         }
       }
+      // If game is abandoned by owner, show message (The game owner has left, you will be redirected to the game lobby) to other player, redirect to game lobby and delete game
+      if (currentGame.abandoned || currentGame.gameOver) {
+        const {firebase:{remove}, params:{gameid}} = this.props
+        const delay = currentGame.abandoned ? 4000 : 30000
+        return setTimeout(() => {
+          if(this.context.router.params.hasOwnProperty('gameid') && this.context.router.params.gameid === gameid){
+            if (!isEmpty(currentGame)) {
+              return remove(`${GAMES_PATH}/${gameid}`)
+              .then(() => {
+                this.context.router.push(`${GAMES_PATH}`)
+              })
+              .catch(e => {console.log(e)})
+            }else{      
+              return this.context.router.push(`${GAMES_PATH}`)
+            }
+          }
+        },delay)
+      }      
     }
   }
 
@@ -182,10 +204,15 @@ export default class GameContainer extends Component {
 
   componentWillUnmount() {
     document.body.removeEventListener('keydown', this.keydownEventListener)
-    const { currentGame, params:{gameid} } = this.props
-    if (currentGame.open || currentGame.mode === 'solo') {
-      this.closeGame(gameid)
+    const { currentGame, params:{gameid}, auth, firebase:{update} } = this.props
+    if (!isEmpty(currentGame)) {
+      if (currentGame.open || currentGame.mode === 'solo') {
+        this.deleteGame(gameid)
+      }else if(auth.uid === currentGame.createdBy.uid && !currentGame.gameOver){
+        update(`games/${gameid}`, {abandoned:true})
+      }
     }
+    // TODO: If non-owner leaves and game has not started, update players, gamePlayers, playercount and open status
   }
 
   render(){
@@ -240,11 +267,13 @@ export default class GameContainer extends Component {
 
     const gameMessage = !isEmpty(currentGame.players) && 
       !isEmpty(currentGame.currentGamePlayers) && 
+      !isEmpty(currentGame.currentGamePlayers[currentPlayerKey]) &&
+      !currentGame.loading ?
       (<GameMessage 
         gameOver={currentGame.gameOver}
         open={currentGame.open}
         mode={currentGame.mode}
-        loading={currentGame.loading}
+        abandoned={currentGame.abandoned}
         roundFinished={currentGame.roundFinished}
         ready={currentGame.hasOwnProperty('ready') ? currentGame.ready[auth.uid] : false}
         roundTimer={currentGame.roundTimer}
@@ -255,7 +284,10 @@ export default class GameContainer extends Component {
         playerReady={this.playerReady}
         totalScoreDuo={totalScoreDuo}
         score={currentGame.currentGamePlayers[currentPlayerKey].score}
-      />)
+      />) :
+      (<div className="df aic acc jcc fww" style={styles.message}>
+        <LoadingSpinner />
+      </div>)
 
     const tickSound = (<Sound
       url="/tick.mp3"
@@ -301,7 +333,7 @@ export default class GameContainer extends Component {
             {
               !isEmpty(currentRound.bank) && Object.keys(currentRound.bank)
               .map(key => (
-                <div key={key} className="df word-container">
+                <div key={key} className={currentRound.bank[key].word.length === 6 ? "df word-container longest" : "df word-container"}>
                 {
                   currentRound.bank[key].word.split('')
                     .map((letter,index) => (
@@ -324,12 +356,19 @@ export default class GameContainer extends Component {
             }
           </div>
         </div>
-        {(currentGame.preRoundTimer > 0 || currentGame.gameOver || currentGame.open || currentGame.loading || currentGame.roundFinished) && gameMessage}
+        {(currentGame.preRoundTimer > 0 || currentGame.gameOver || currentGame.open || currentGame.loading || currentGame.roundFinished || currentGame.abandoned) && gameMessage}
         {!currentGame.roundFinished && 
          currentGame.roundTimer > 0 &&
          currentGame.preRoundTimer === 0 &&
          !currentGame.gameOver &&
+         !currentGame.abandoned &&
          (<div className="posr tal m0a" style={{width:290,height:120}}>
+            <div className="guess-background dib"></div>
+            <div className="guess-background dib"></div>
+            <div className="guess-background dib"></div>
+            <div className="guess-background dib"></div>
+            <div className="guess-background dib"></div>
+            <div className="guess-background dib"></div>
             {keywordLetters.map((letter, index) => {
               !letterCount.hasOwnProperty(letter) ? letterCount[letter] = 0 : letterCount[letter]++
               return(
@@ -569,7 +608,7 @@ export default class GameContainer extends Component {
         update(`/users/${auth.uid}`, {highScoreDuo:score}).then(() => {
           if(auth.uid === createdBy.uid){
             const newHightScoreDuo = {score:score,players:{}}
-            Object.keys(players).forEach(player => newHightScoreDuo.players[player] = player)
+            Object.keys(players).forEach(player => newHightScoreDuo.players[player] = players[player].userName)
             firebase.pushWithMeta('/highScoreDuo', newHightScoreDuo)
           }
         }).catch(e => console.log(e))
@@ -579,14 +618,21 @@ export default class GameContainer extends Component {
     })    
   }
 
-  closeGame = (key) => {
-    return this.props.firebase.update(`games/${key}`, {open:false})
+  deleteGame = (key) => {
+    return this.props.firebase.remove(`games/${key}`)
       .catch(e => {console.log(e)})
   }  
 
 }
 
 const styles = {
+  message:{
+    color:'#456',
+    fontSize:28,
+    height:120,
+    fontWeight:"bold",
+    letterSpacing:"-1px"
+  },  
   button:{
     padding:"8px 32px",
     margin:"0 auto 10px"

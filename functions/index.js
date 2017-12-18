@@ -117,11 +117,11 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
     return admin.database().ref(`games/${event.params.gid}`).once('value')
   }).then(snap => {
   	const game = snap.val(),
-          ready = game.ready,
+          players = game.players,
           round = game.round,
           updates = {loading:false,ready:{}}
     if (round > 0) {
-      Object.keys(ready).forEach(key => { updates.ready[key] = false })
+      Object.keys(players).forEach(key => { updates.ready[key] = false })
     }
     return admin.database().ref(`games/${event.params.gid}`).update(updates)
   }).catch(e => {
@@ -137,13 +137,14 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
     return;
   }
   // Get players count
-  let playerCount, mode
+  let playerCount, mode, players
   const gameMode = `/games/${event.params.gid}/mode`,
         colors = ["#007AD5","#009B90","#5A00F0"]
   return admin.database().ref(gameMode).once('value').then(snap => {
     mode = snap.val()
     return admin.database().ref(`/games/${event.params.gid}/players`).once('value')
   }).then(snap => {
+    players = snap
     playerCount = Object.keys(snap.val()).length
     color = mode === 'solo' ? colors[2] : colors[playerCount - 1]
     return admin.database().ref(`/gamePlayers`)
@@ -160,12 +161,16 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
     // TODO: change to 3
     // Start Game
     const key = snap.key;
-    const updates = { [key]: true };
+    const updates = { [key]: true }
     return admin.database().ref(`games/${event.params.gid}/currentGamePlayers`).update(updates);
   }).then(() => {
-    return admin.database().ref(`games/${event.params.gid}/ready/`).update({[event.params.uid]:false});
+    const updates = {}
+    players.forEach(child => {
+      updates[child.key] = false
+    })
+    return admin.database().ref(`games/${event.params.gid}/ready/`).update(updates)
   }).then(() => {
-    return admin.database().ref(`games/${event.params.gid}`).update({loading:false,playerCount:playerCount});
+    return admin.database().ref(`games/${event.params.gid}`).update({loading:false,playerCount:playerCount})
   }).catch(e => {
   	console.log(e);
   })
@@ -187,61 +192,47 @@ exports.setUserData = functions.database.ref('/users/{uid}').onWrite(event => {
   })
 })
 
-const CUT_OFF_TIME = 4 * 60 * 60 * 1000; // 4 Hours in milliseconds.
-/**
- * This database triggered function will check for child nodes that are older than the
- * cut-off time. Each child needs to have a `timestamp` attribute.
- */
-exports.deleteOldGames = functions.database.ref('/games/{pushId}')
-  .onWrite(event => {
-    const ref = event.data.ref.parent; // reference to the items
-    const now = Date.now();
-    const cutoff = now - CUT_OFF_TIME;
-    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
-    return oldItemsQuery.once('value').then(snapshot => {
-      // create a map with all children that need to be removed
-      const updates = {};
-      snapshot.forEach(child => {
-        updates[child.key] = null;
-      });
-      // execute all updates in one go and return the result to end the function
-      return ref.update(updates);
-    });
-  });
+const CUT_OFF_TIME = 1 * 60 * 60 * 1000; // 1 hour in milliseconds.
 
 exports.deleteOldGamePlayers = functions.database.ref('/gamePlayers/{pushId}')
   .onWrite(event => {
-    const ref = event.data.ref.parent; // reference to the items
-    const now = Date.now();
-    const cutoff = now - CUT_OFF_TIME;
-    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
-    return oldItemsQuery.once('value').then(snapshot => {
-      // create a map with all children that need to be removed
-      const updates = {};
-      snapshot.forEach(child => {
-        updates[child.key] = null;
-      });
-      // execute all updates in one go and return the result to end the function
-      return ref.update(updates);
+  if (event.data.previous.exists()) {
+    return;
+  }
+  const ref = event.data.ref.parent; // reference to the items
+  const now = Date.now();
+  const cutoff = now - CUT_OFF_TIME;
+  const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+  return oldItemsQuery.once('value').then(snapshot => {
+    // create a map with all children that need to be removed
+    const updates = {};
+    snapshot.forEach(child => {
+      updates[child.key] = null;
     });
-  }); 
+    // execute all updates in one go and return the result to end the function
+    return ref.update(updates);
+  });
+}); 
 
-exports.deleteOldGameRounds = functions.database.ref('/gameRounds/{pushId}')
+exports.deleteOldGameRound = functions.database.ref('/gameRounds/{pushId}')
   .onWrite(event => {
-    const ref = event.data.ref.parent; // reference to the items
-    const now = Date.now();
-    const cutoff = now - CUT_OFF_TIME;
-    const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
-    return oldItemsQuery.once('value').then(snapshot => {
-      // create a map with all children that need to be removed
-      const updates = {};
-      snapshot.forEach(child => {
-        updates[child.key] = null;
-      });
-      // execute all updates in one go and return the result to end the function
-      return ref.update(updates);
+  if (event.data.previous.exists()) {
+    return;
+  }    
+  const ref = event.data.ref.parent; // reference to the items
+  const now = Date.now();
+  const cutoff = now - CUT_OFF_TIME;
+  const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+  return oldItemsQuery.once('value').then(snapshot => {
+    // create a map with all children that need to be removed
+    const updates = {};
+    snapshot.forEach(child => {
+      updates[child.key] = null;
     });
-  });  
+    // execute all updates in one go and return the result to end the function
+    return ref.update(updates);
+  });
+});  
 
 const getRandomNumber = (n) => {
   const MAX_RANDOM = Math.pow(2, 30);

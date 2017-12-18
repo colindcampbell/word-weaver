@@ -7,8 +7,11 @@
 
 	.word-container{
 	  margin-bottom:4px;
-	  margin-right:10px;
+	  margin-right:12px;
 	  box-shadow: 0px 1px 8px -2px rgba(0,0,0,0.6);
+	  &.longest{
+	  	margin-right: 0;
+	  }
 	}
 
 		.bank-letter-container{
@@ -52,9 +55,21 @@
   width: 40px;
   height: 40px;
   left: 0;
-  bottom: 10px;
+  bottom: 15px;
   cursor: pointer;
   transition: 300ms;
+}
+
+.guess-background{
+	width:40px;
+	height:40px;
+	border-radius:4px;
+	background: #FFF;
+	margin-top: 15px;
+	margin-right: 10px;
+	&:nth-of-type(6){
+		margin-right: 0;
+	}
 }
 
 	.cube{

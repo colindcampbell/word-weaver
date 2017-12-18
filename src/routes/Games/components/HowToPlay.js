@@ -9,8 +9,8 @@ export const HowToPlay = ({hideHowTo}) => (
 			<h2>Objective</h2>
 			<p>The objective of WordWeaver is simple: unscramble letters and create words in order to score points. You are given 6 scrambled letter with which you must create as many 3, 4, 5, and 6 letter words as possible in the allotted time. The bank of words available for the given set of letters was built using the <a className="text-link" target="_blank" href="https://scrabble.hasbro.com/en-us/tools">official Scrabble</a><sup>&copy;</sup> <a className="text-link" target="_blank" href="https://scrabble.hasbro.com/en-us/tools">dictionary</a>.</p>
 			<h2>Game Modes</h2>
-			<p style={{marginLeft:20}}><span className="fwb">Single Player:</span> In this mode your objective, in addition to finding as many words as possible, is to find the word that uses all 6 letters. Finding this word (at least one if there are multiple) will let you move to the next round. You will continue to move on and score points as long as you find the longest word each round.</p>
-			<p style={{marginLeft:20}}><span className="fwb">Multiplayer Duo Co-Op:</span> In this mode your objective is the same as single player mode with the difference being that you are working with another player to find words.</p>
+			<p style={{marginLeft:20}}><span className="fwb">Single Player:</span> Your objective in this mode, in addition to finding as many words as possible, is to find the word that uses all 6 letters. Finding this word (at least one if there are multiple) will let you move to the next round. You will continue to move on and score points as long as you find the longest word each round.</p>
+			<p style={{marginLeft:20}}><span className="fwb">Multiplayer Duo Co-Op:</span> In this mode your objective is the same as single player mode. The differences are that you are working with another player to find words and your total score is the combined score of each player.</p>
 			<p style={{marginLeft:20}}><span className="fwb">Multiplayer Duo Versus:</span> In this mode you are competing head-to-head with a competitor to find words as quickly as possible. Once a word is found it is no longer available for the other player. The words that each player has captured will be indicated with a color-coded background. The game length is fixed at 3 rounds and the winner is determined by each player's cumulative score for those 3 rounds.</p>
 			<h2>Controls</h2>
 			<p>Once gameplay begins, you will interact using the keyboard.</p>
@@ -22,6 +22,8 @@ export const HowToPlay = ({hideHowTo}) => (
 			<h2>Scoring</h2>
 			<p>Scoring is based on Scrabble letter value. The value of each word that you capture is a combination of the value of each letter added together, then multiplied by 10. For example "THE" would have a value of 40: (1 + 2 + 1) x 10</p>
 			<p>There is also a multiplier for the length of the word: 2x for 4-letter words, 3x for 5-letter words, and 4x for 6-letter words.</p>
+			<h2>Account</h2>
+			<p>You can access your account by clicking on the icon or your name in the top right corner. There you can see your high scores and wins, and change your username.</p>	
 		</div>
 	</div>
 

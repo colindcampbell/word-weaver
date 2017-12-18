@@ -17,8 +17,8 @@ import { HowToPlay } from '../components/HowToPlay'
 
 const populates = [
   { child: 'players', root: 'users', keyProp: 'uid' },
-  { child: 'createdBy', root: 'users', keyProp: 'uid' },
-  { child: 'highScoreDuo', root: 'users', keyProp: 'uid' },
+  { child: 'currentGameRound', root: 'gameRounds' },
+  { child: 'currentGamePlayers', root: 'gamePlayers' }
 ]
 
 // const mapDispatchToProps = {
@@ -30,23 +30,19 @@ const populates = [
   { path: 'games', queryParams: ['orderByChild=open', 'equalTo=true'], populates },
   { path: 'users', storeAs: 'highScoreUsers', queryParams: ['orderByChild=highScore', 'limitToLast=5'] },
   { path: 'users', storeAs: 'winsUsers', queryParams: ['orderByChild=wins', 'limitToLast=5'] },
-  { path: 'highScoreDuo', queryParams: ['orderByChild=score', 'limitToLast=5'], populates },
-  { path: 'gamePlayers', queryParams: ['limitToLast=80' ]},
-  { path: 'gameRounds', queryParams: ['limitToLast=80' ]}
+  { path: 'highScoreDuo', queryParams: ['orderByChild=score', 'limitToLast=5'] },
+  { path: 'gamePlayers', queryParams: ['limitToLast=100' ]},
+  { path: 'gameRounds', queryParams: ['limitToLast=60' ]}
 ])
 @connect(
   ({firebase, firebase:{auth, data:{gamePlayers, gameRounds}, ordered:{highScoreUsers, winsUsers, highScoreDuo}}}) => ({
     auth,
     games: populate(firebase, 'games', populates),
-    highScoreDuo: populate(firebase, 'highScoreDuo', populates),
+    highScoreDuo,
     gameRounds,
     gamePlayers,
     highScoreUsers,
     winsUsers
-    // gamePlayers: dataToJS(firebase, 'gamePlayers'),
-    // gameRounds: dataToJS(firebase, 'gameRounds')
-    // notification: state.notification,
-    // showNotification
   })
   // mapDispatchToProps
 )
@@ -72,7 +68,6 @@ export default class Games extends Component {
 
   render () {
     const { games, auth, notification, highScoreUsers, winsUsers, highScoreDuo } = this.props
-
 
     if ( (!isLoaded(games, auth, highScoreDuo, highScoreUsers) || isEmpty(highScoreDuo, highScoreUsers, auth)) ) {
       return (
@@ -112,23 +107,23 @@ export default class Games extends Component {
       )
     })
 
-    const duoLeadersList = highScoreDuo !== null ? Object.keys(highScoreDuo).map(key => {
-      const score = highScoreDuo[key]
+    const duoLeadersList = Object.keys(highScoreDuo).map(key => {
+      const highScore = highScoreDuo[key].value
       return (
         <div className="w100">
           <div className="leader df jcsb aic" style={styles.button}>
             <div className="tal">
-              {Object.keys(score.players).map((player,index) => {
-                let name = score.players[player].userName
+              {Object.keys(highScore.players).map((player,index) => {
+                let name = highScore.players[player]
                 name = index === 0 ? name + ' &' : name
                 return (<div>{name}</div>)
               })}
             </div>
-            {score.score}
+            {highScore.score}
           </div>
         </div>
       )
-    }) : []
+    })
 
     // Game Route is being loaded
     if (this.props.children) {
@@ -180,6 +175,7 @@ export default class Games extends Component {
     newGame.round = 0
     newGame.roundFinished = false
     newGame.gameOver = false
+    newGame.abandoned = false
     newGame.winner = ''
     // add current user to game
     newGame.players = {}
@@ -211,7 +207,7 @@ export default class Games extends Component {
 
   getOpenGameIDs = (games, mode) => {
     return Object.keys(games).filter(gameKey => {
-      return games[gameKey].open === true && games[gameKey].mode === mode
+      return games[gameKey] !== null && games[gameKey].open === true && games[gameKey].mode === mode
     })
   }  
 

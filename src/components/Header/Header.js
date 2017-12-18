@@ -17,7 +17,7 @@ import {
 
 @firebaseConnect()
 @connect(
-  ({ firebase: { auth, authError, profile } }) => ({
+  ({ firebase: { auth, authError, profile }}) => ({
     authError,
     auth,
     profile
