@@ -18,8 +18,8 @@ export const AccountForm = ({ account, handleSubmit, submitting, onLogout, onDel
       style={{marginRight:5,border:"none"}}
     >Update</button>
     <div className="button small bgP1 dib" style={{marginRight:5}} onClick={onLogout}>Logout</div>
-    <Link style={{color:"#ffffff",marginRight:5,marginBottom:5}} className="button small bgP3 dib" to="/games">Back</Link><br/>
-    <Link onClick={onDelete} style={{color:"#ffffff",background:"#dd0033"}} className="button small dib" to="/games">Delete Account</Link>
+    <Link onClick={onDelete} style={{color:"#ffffff",background:"#dd0033",marginRight:5}} className="button small dib" to="/games">Delete Account</Link>
+    <Link style={{color:"#ffffff"}} className="button small bgP3 dib" to="/games">Back</Link>
   </form>
 )
 

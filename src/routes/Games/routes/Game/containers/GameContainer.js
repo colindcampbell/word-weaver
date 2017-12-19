@@ -210,7 +210,7 @@ export default class GameContainer extends Component {
   }
 
   render(){
-    const { currentGame, auth, games, params:{gameid}, notification } = this.props
+    const { currentGame, auth, games, params:{gameid}, profile, notification } = this.props
     const { guess, shuffled, currentPlayerKey } = this.state
 
     if (!isLoaded(currentGame) || 
@@ -318,7 +318,7 @@ export default class GameContainer extends Component {
       playStatus={Sound.status.PLAYING}
       volume={60}
       onFinishedPlaying={this.handleSoundEnd.bind(this, 'shuffleSound')}
-    />)            
+    />)
 
     return(
       <div className="m0a">
@@ -392,12 +392,12 @@ export default class GameContainer extends Component {
           <div className="posa" style={{background:"#456",transition:"1000ms linear",right:0,top:2,bottom:0,width:`${(currentGame.roundLength - currentGame.roundTimer)/currentGame.roundLength*100}%`}}></div>
           <span className="posr" style={{fontSize:36,lineHeight:"40px",fontWeight:"bold",color:"#ffffff",zIndex:1}}>{`${Math.floor(currentGame.roundTimer / 60)}:${('0' + currentGame.roundTimer % 60).slice(-2)}`}</span>
         </div>
-        {this.state.successSound && successSound}
-        {this.state.errorSound && errorSound}
-        {this.state.shuffleSound && shuffleSound}
-        {this.state.greatSuccessSound && greatSuccessSound}
-        {this.state.tickSound && tickSound}
-        {this.state.gameOverSound && gameOverSound}
+        {profile.sound && this.state.successSound && successSound}
+        {profile.sound && this.state.errorSound && errorSound}
+        {profile.sound && this.state.shuffleSound && shuffleSound}
+        {profile.sound && this.state.greatSuccessSound && greatSuccessSound}
+        {profile.sound && this.state.tickSound && tickSound}
+        {profile.sound && this.state.gameOverSound && gameOverSound}
       </div>
     )
   }

@@ -23,7 +23,7 @@ export const HowToPlay = ({hideHowTo}) => (
 			<p>Scoring is based on Scrabble letter value. The value of each word that you capture is a combination of the value of each letter added together, then multiplied by 10. For example "THE" would have a value of 40: (1 + 2 + 1) x 10</p>
 			<p>There is also a multiplier for the length of the word: 2x for 4-letter words, 3x for 5-letter words, and 4x for 6-letter words.</p>
 			<h2>Account</h2>
-			<p>You can access your account by clicking on the icon or your name in the top right corner. There you can see your high scores and wins, and change your username.</p>	
+			<p>You can access your account by clicking on the icon or your name in the top right corner. There you can see your high scores and wins, change your sound settings, change your username, and delete your account.</p>	
 		</div>
 	</div>
 

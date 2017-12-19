@@ -186,7 +186,7 @@ exports.setUserData = functions.database.ref('/users/{uid}').onWrite(event => {
     return;
   }
   const user = event.data.val();
-  return admin.database().ref(`/users/${event.params.uid}`).update({wins:0,highScore:0,highScoreDuo:0,userName:user.displayName}).catch(e => {
+  return admin.database().ref(`/users/${event.params.uid}`).update({wins:0,highScore:0,highScoreDuo:0,userName:user.displayName,sound:true}).catch(e => {
     console.log(e)
   })
 })
