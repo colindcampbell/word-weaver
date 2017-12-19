@@ -176,20 +176,16 @@ export default class GameContainer extends Component {
           const totalScore = currentGame.gameMode === 'solo' ? currentGamePlayers[this.state.currentPlayerKey].score : this.getTotalScoreDuo(currentGamePlayers)
           this.endStandardGame(update,gameid,totalScore)
         }
+        // TODO: delete game and redirect player to lobby after 30 seconds
       }
+
       // If game is abandoned by owner, show message (The game owner has left, you will be redirected to the game lobby) to other player, redirect to game lobby and delete game
       if (currentGame.abandoned || currentGame.gameOver) {
-        const {firebase:{remove}, params:{gameid}} = this.props
+        const {params:{gameid}} = this.props
         const delay = currentGame.abandoned ? 4000 : 30000
         return setTimeout(() => {
           if(this.context.router.params.hasOwnProperty('gameid') && this.context.router.params.gameid === gameid){
             if (!isEmpty(currentGame)) {
-              return remove(`${GAMES_PATH}/${gameid}`)
-              .then(() => {
-                this.context.router.push(`${GAMES_PATH}`)
-              })
-              .catch(e => {console.log(e)})
-            }else{      
               return this.context.router.push(`${GAMES_PATH}`)
             }
           }
@@ -206,9 +202,7 @@ export default class GameContainer extends Component {
     document.body.removeEventListener('keydown', this.keydownEventListener)
     const { currentGame, params:{gameid}, auth, firebase:{update} } = this.props
     if (!isEmpty(currentGame)) {
-      if (currentGame.open || currentGame.mode === 'solo') {
-        this.deleteGame(gameid)
-      }else if(auth.uid === currentGame.createdBy.uid && !currentGame.gameOver){
+      if(auth.uid === currentGame.createdBy.uid && !currentGame.gameOver){
         update(`games/${gameid}`, {abandoned:true})
       }
     }
@@ -617,11 +611,6 @@ export default class GameContainer extends Component {
       console.log(e)
     })    
   }
-
-  deleteGame = (key) => {
-    return this.props.firebase.remove(`games/${key}`)
-      .catch(e => {console.log(e)})
-  }  
 
 }
 

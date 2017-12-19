@@ -28,7 +28,7 @@ const populates = [
 @UserIsAuthenticated
 @firebaseConnect([
   { path: 'games', queryParams: ['orderByChild=open', 'equalTo=true'], populates },
-  { path: 'users', storeAs: 'highScoreUsers', queryParams: ['orderByChild=highScore', 'limitToLast=5'] },
+  { path: 'users', storeAs: 'highScoreUsers', queryParams: ['orderByChild=highScore', 'limitToLast=20'] },
   { path: 'users', storeAs: 'winsUsers', queryParams: ['orderByChild=wins', 'limitToLast=5'] },
   { path: 'highScoreDuo', queryParams: ['orderByChild=score', 'limitToLast=5'] },
   { path: 'gamePlayers', queryParams: ['limitToLast=100' ]},
@@ -137,7 +137,9 @@ export default class Games extends Component {
           <div className="w100">
             <div className="button bgP3" onClick={this.newSubmit.bind(this,'solo')} style={styles.button}>Play Solo</div>
           </div>
-          {soloLeaderList.reverse()}
+          <div className="w100 inner-shadow" style={{height:350,overflowY:"auto"}}>
+            {soloLeaderList.reverse()}
+          </div>
         </div>
         <div className="w33-r" style={{marginBottom:30}}>
           <div className="w100">

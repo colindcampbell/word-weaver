@@ -194,12 +194,12 @@ exports.setUserData = functions.database.ref('/users/{uid}').onWrite(event => {
 
 const CUT_OFF_TIME = 1 * 60 * 60 * 1000; // 1 hour in milliseconds.
 
-exports.deleteOldGamePlayers = functions.database.ref('/gamePlayers/{pushId}')
+exports.deleteOldGamePlayers = functions.database.ref('/gamePlayers/{pushId}/timestamp')
   .onWrite(event => {
   if (event.data.previous.exists()) {
     return;
   }
-  const ref = event.data.ref.parent; // reference to the items
+  const ref = event.data.ref.parent.parent; // reference to the items
   const now = Date.now();
   const cutoff = now - CUT_OFF_TIME;
   const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
@@ -214,12 +214,32 @@ exports.deleteOldGamePlayers = functions.database.ref('/gamePlayers/{pushId}')
   });
 }); 
 
-exports.deleteOldGameRound = functions.database.ref('/gameRounds/{pushId}')
+exports.deleteOldGames = functions.database.ref('/games/{pushId}/timestamp')
   .onWrite(event => {
   if (event.data.previous.exists()) {
     return;
   }    
-  const ref = event.data.ref.parent; // reference to the items
+  const ref = event.data.ref.parent.parent; // reference to the items
+  const now = Date.now();
+  const cutoff = now - CUT_OFF_TIME;
+  const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
+  return oldItemsQuery.once('value').then(snapshot => {
+    // create a map with all children that need to be removed
+    const updates = {};
+    snapshot.forEach(child => {
+      updates[child.key] = null;
+    });
+    // execute all updates in one go and return the result to end the function
+    return ref.update(updates);
+  });
+}); 
+
+exports.deleteOldGameRound = functions.database.ref('/gameRounds/{pushId}/timestamp')
+  .onWrite(event => {
+  if (event.data.previous.exists()) {
+    return;
+  }    
+  const ref = event.data.ref.parent.parent; // reference to the items
   const now = Date.now();
   const cutoff = now - CUT_OFF_TIME;
   const oldItemsQuery = ref.orderByChild('timestamp').endAt(cutoff);
