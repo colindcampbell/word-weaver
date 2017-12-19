@@ -8,7 +8,7 @@ import LoadingSpinner from 'components/LoadingSpinner'
 import AccountForm from '../components/AccountForm/AccountForm'
 // import classes from './AccountContainer.scss'
 
-@UserIsAuthenticated // redirect to /login if user is not authenticated
+@UserIsAuthenticated // redirect to / if user is not authenticated
 @firebaseConnect() // add this.props.firebase
 @connect( // Map redux state to props
   ({ firebase: {auth, profile} }) => ({
@@ -38,6 +38,22 @@ export default class Account extends Component {
         console.error('Error updating account', err) // eslint-disable-line no-console
         // TODO: Display error to user
       })
+
+  deleteAccount = () => {
+    event.preventDefault()
+    const confirmation = confirm('Are you sure you want to delete your account?')
+    if(confirmation){
+      this.props.firebase.remove(`users/${this.props.auth.uid}`)
+      .then(this.handleLogout())
+      .then(() => this.context.router.push('/'))
+      .catch((err) => {
+        console.error('Error updating account', err) // eslint-disable-line no-console
+        // TODO: Display error to user
+      })
+    }else{
+      return
+    }
+  }
 
   render () {
     const { profile } = this.props
@@ -69,6 +85,7 @@ export default class Account extends Component {
               account={profile}
               onSubmit={this.updateAccount}
               onLogout={this.handleLogout}
+              onDelete={this.deleteAccount}
             />
           </div>
         </div>

@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 // import ProviderDataForm from '../ProviderDataForm'
 // import classes from './AccountForm.scss'
 
-export const AccountForm = ({ account, handleSubmit, submitting, onLogout }) => (
+export const AccountForm = ({ account, handleSubmit, submitting, onLogout, onDelete }) => (
   <form onSubmit={handleSubmit}>
     <div style={{marginBottom:10}}>
       <label style={{fontSize:18}} htmlFor="userName">Display Name: </label>
@@ -18,7 +18,8 @@ export const AccountForm = ({ account, handleSubmit, submitting, onLogout }) => 
       style={{marginRight:5,border:"none"}}
     >Update</button>
     <div className="button small bgP1 dib" style={{marginRight:5}} onClick={onLogout}>Logout</div>
-    <Link style={{color:"#ffffff"}} className="button small bgP3 dib" to="/games">Back</Link>
+    <Link style={{color:"#ffffff",marginRight:5,marginBottom:5}} className="button small bgP3 dib" to="/games">Back</Link><br/>
+    <Link onClick={onDelete} style={{color:"#ffffff",background:"#dd0033"}} className="button small dib" to="/games">Delete Account</Link>
   </form>
 )
 

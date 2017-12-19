@@ -180,7 +180,6 @@ exports.addUserToGame = functions.database.ref('/games/{gid}/players/{uid}').onW
 exports.setUserData = functions.database.ref('/users/{uid}').onWrite(event => {
   // Only edit data when it is first created.
   if (!event.data.exists()) {
-    // TODO: delete '/gamePlayers/gid/uid', set game open to true, 
     return;
   }  
   if (event.data.previous.exists()) {
