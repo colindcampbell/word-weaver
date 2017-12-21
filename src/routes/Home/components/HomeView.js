@@ -81,8 +81,8 @@ export default class Signup extends Component {
   render () {
     const { authError, firebase } = this.props
     return (
-      <div className="df acc jcc fww posf" style={{top:0,bottom:0,right:0,left:0}}>
-        <div className="w100 tac" style={{marginBottom:60}} >
+      <div className="df acc jcc fww posf" style={{top:0,bottom:0,right:0,left:0,overflowY:"auto"}}>
+        <div className="w100 tac" style={{marginBottom:40}} >
           <svg width="359px" height="258px" viewBox="0 0 359 258" version="1.1">
             <title>WordWeaver</title>
             <defs>
@@ -132,6 +132,9 @@ export default class Signup extends Component {
               </g>
             </g>
           </svg>
+        </div>
+        <div className="w100 tac" style={{marginBottom:15}} >
+          <img src="/gameplay-sample.gif" alt="Gameplay Sample" style={{borderRadius:3,boxShadow:"0 2px 140px -20px rgba(0,0,0,.7)"}}/>
         </div>
         <div className="w100" id="firebaseui-auth-container">
           <div className="firebaseui-container firebaseui-page-provider-sign-in firebaseui-id-page-provider-sign-in"><div className="firebaseui-card-content">
