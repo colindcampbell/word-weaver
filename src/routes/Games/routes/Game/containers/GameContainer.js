@@ -494,7 +494,7 @@ export default class GameContainer extends Component {
     // Shuffle letters
     if (key === ' ') {
       event.preventDefault()
-      this.setState(prevState => ({shuffleSound:true}))
+      this.playSound('shuffleSound')
       const newShuffled = shuffleLetters(shuffled)
       this.setShuffled(newShuffled)
     }
@@ -663,11 +663,6 @@ export default class GameContainer extends Component {
         console.error('error creating new game', err) // eslint-disable-line
       })
   }
-
-  startGame = () => {
-
-  }
-
 }
 
 const styles = {
