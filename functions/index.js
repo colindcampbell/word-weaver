@@ -108,7 +108,7 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
     newKey = snap.key
     return admin.database().ref(`games/${event.params.gid}`).update({
       currentGameRound:{[newKey]:true},
-      preRoundTimer:10,
+      preRoundTimer:5,
       roundTimer:roundTime,
       roundLength:roundTime,
       roundFinished:false

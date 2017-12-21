@@ -36,10 +36,11 @@ const populates = [
   }
 )
 @connect(
-  ({firebase,firebase:{profile}}, {params}) => {
+  ({firebase,firebase:{profile}}, {params}, newSubmit) => {
   return {
     currentGame: populate(firebase, `${GAMES_PATH}/${params.gameid}`, populates),
-    profile
+    profile,
+    newSubmit
   }}
 )
 export default class GameContainer extends Component {
@@ -70,16 +71,11 @@ export default class GameContainer extends Component {
       const { currentGameRound } = currentGame,
             currentRound = currentGameRound[Object.keys(currentGameRound)[0]],
             { currentGamePlayers } = currentGame
-      let currentPlayerKey = false
-      Object.keys(currentGamePlayers).forEach(player => {
-        if (currentGamePlayers[player].hasOwnProperty(auth.uid)) {
-          currentPlayerKey = player
-        }
-      })
+      let currentPlayerKey = this.getCurrentGamePlayerKey(auth.uid)
       this.setState({
         keyword: currentRound.keyword,
         shuffled: currentRound.shuffled,
-        currentPlayerKey: currentPlayerKey,
+        currentPlayerKey,
         scoreSet:false,
         successSound: false,
         tickSound: false,
@@ -94,9 +90,7 @@ export default class GameContainer extends Component {
   componentWillReceiveProps(nextProps){
     const { currentGame, auth } = nextProps
     if (isLoaded(currentGame) && 
-        !isEmpty(currentGame) && 
-        !isEmpty(currentGame.currentGameRound) && 
-        !isEmpty(currentGame.currentGamePlayers) ){
+        !isEmpty(currentGame, currentGame.currentGameRound, currentGame.currentGamePlayers)){
       const { currentGameRound, currentGamePlayers } = currentGame,
             currentRound = currentGameRound[Object.keys(currentGameRound)[0]]
 
@@ -110,25 +104,22 @@ export default class GameContainer extends Component {
       }
 
       // Set this.state.currentPlayerKey from currentGamePlayers to know the gamePlayer of the current user
-      if (this.state.currentPlayerKey === false && 
+      if (( this.state.currentPlayerKey === false ||
+            !currentGamePlayers.hasOwnProperty(this.state.currentPlayerKey)) && 
         Object.keys(currentGame.players).length === Object.keys(currentGame.currentGamePlayers).length) {
-        let currentPlayerKey = ''
-        Object.keys(currentGamePlayers).forEach(player => {
-          if (currentGamePlayers[player].hasOwnProperty(auth.uid)) {
-            currentPlayerKey = player
-          }
-        })
-        this.setState({
-          currentPlayerKey: currentPlayerKey
-        })
+        let currentPlayerKey = this.getCurrentGamePlayerKey(auth.uid)
+        this.setState( {currentPlayerKey:currentPlayerKey} )
       }
+
+      const isOwner = auth.uid === currentGame.createdBy.uid
+
       // Start of first round after the pre round countdown reaches 0. These will only run for the game creator.
       if (!currentGame.open && 
         !currentGame.abandoned &&
         currentGame.preRoundTimer > 0 && 
-        auth.uid === currentGame.createdBy.uid) {
+        isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
-        if (currentGame.mode !== 'duo-vs' && currentGamePlayers[this.state.currentPlayerKey].roundScore !== 0) {
+        if (currentGame.mode !== 'duo-vs' && currentGamePlayers.hasOwnProperty(this.state.currentPlayerKey) && currentGamePlayers[this.state.currentPlayerKey].roundScore !== 0) {
           // TODO: Update all players
           Object.keys(currentGamePlayers).forEach(key => {
             if (currentGamePlayers[key].roundScore > 0) {
@@ -146,19 +137,25 @@ export default class GameContainer extends Component {
         !currentGame.abandoned &&
         currentGame.roundTimer > 0 && 
         currentGame.preRoundTimer === 0 && 
-        auth.uid === currentGame.createdBy.uid) {
+        isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
         currentGame.roundTimer < 6 && this.setState({tickSound:true})
+        // if (currentGame.roundTimer > 5) {
+        //   setTimeout(() => { 
+        //     update(`${GAMES_PATH}/${gameid}`, {roundTimer:5})
+        //   }, 980);
+        // }else{
         setTimeout(() => { 
           update(`${GAMES_PATH}/${gameid}`, {roundTimer:currentGame.roundTimer - 1})
         }, 980);
+        // }
       }
       // End of Round
       if (!currentGame.open && 
         currentGame.roundTimer === 0 && 
         currentGame.preRoundTimer === 0 && 
         // currentGame.round === this.props.currentGame.round &&
-        auth.uid === currentGame.createdBy.uid) {
+        isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
         if (!currentGame.roundFinished) {
           update(`${GAMES_PATH}/${gameid}`, {roundFinished:true,loading:true}).catch(e => {
@@ -213,6 +210,7 @@ export default class GameContainer extends Component {
     const { currentGame, auth, games, params:{gameid}, profile, notification } = this.props
     const { guess, shuffled, currentPlayerKey } = this.state
 
+
     if (!isLoaded(currentGame) || 
       isEmpty(currentGame) || 
       isEmpty(currentGame.currentGamePlayers) || 
@@ -222,6 +220,10 @@ export default class GameContainer extends Component {
           <LoadingSpinner />
         </div>
       )
+    }
+
+    if (this.state.currentPlayerKey === false) {
+      this.setState({currentPlayerKey:this.getCurrentGamePlayerKey(auth.uid)})
     }
 
     const { currentGameRound, currentGamePlayers } = currentGame,
@@ -277,6 +279,7 @@ export default class GameContainer extends Component {
         round={currentGame.round}
         playerReady={this.playerReady}
         totalScoreDuo={totalScoreDuo}
+        playAgain={this.playAgain}
         score={currentGame.currentGamePlayers[currentPlayerKey].score}
       />) :
       (<div className="df aic acc jcc fww" style={styles.message}>
@@ -523,6 +526,14 @@ export default class GameContainer extends Component {
     this.setState({shuffled})
   }
 
+  getCurrentGamePlayerKey = (authid) => {
+    if (this.props.currentGame === undefined) { return false; }
+    const { currentGamePlayers } = this.props.currentGame
+    return currentGamePlayers === undefined ? false : Object.keys(currentGamePlayers).filter(player => {
+      return currentGamePlayers[player].hasOwnProperty(authid)
+    })[0]
+  }  
+
   getLetterStyles = (shuffled, guess) => {
     // Gives each letter a translation based on it's position in the shuffled word or the guess word
     const letterStyles = {}
@@ -610,6 +621,37 @@ export default class GameContainer extends Component {
     }).catch(e => {
       console.log(e)
     })    
+  }
+
+  playAgain = () => {
+    const { firebase, auth, currentGame } = this.props
+
+    const newGame = {}
+    newGame.open = false
+    newGame.timestamp = Date.now()
+    newGame.mode = currentGame.mode
+    newGame.round = 0
+    newGame.roundFinished = false
+    newGame.gameOver = false
+    newGame.abandoned = false
+    newGame.winner = ''
+    // add current users to game
+    newGame.players = {}
+    Object.keys(currentGame.players).forEach(key => {
+      newGame.players[key] = key
+    })
+    return firebase.pushWithMeta('games', newGame)
+      .then(data => {
+        this.context.router.push(`${GAMES_PATH}/${data.key}`)
+      })
+      .catch(err => {
+        // TODO: Show Snackbar
+        console.error('error creating new game', err) // eslint-disable-line
+      })
+  }
+
+  startGame = () => {
+
   }
 
 }

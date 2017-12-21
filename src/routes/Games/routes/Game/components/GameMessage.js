@@ -10,7 +10,7 @@ import {
 
 export default class GameMessage extends Component {
   render() {
-    const { gameOver, open, mode, roundFinished, ready, roundTimer, preRoundTimer, winner, abandoned, color,round, playerReady, score, totalScoreDuo } = this.props
+    const { gameOver, open, mode, roundFinished, ready, roundTimer, preRoundTimer, winner, playAgain, abandoned, color,round, playerReady, score, totalScoreDuo } = this.props
 
     return (
       <div className="df aic acc jcc fww tww" style={styles.message}>
@@ -33,9 +33,12 @@ export default class GameMessage extends Component {
          mode !== 'duo-vs' &&
           (<div style={{textAlign:"center"}}>
             <div style={{width:"100%",marginBottom:10}}>{`Game Over! Final Score: ${mode === 'solo' ? score : totalScoreDuo}`}</div>
-            <Link to={GAMES_PATH} className="button" style={Object.assign( {}, styles.button, {color:"#ffffff",background:color} )}>
+            <Link to={GAMES_PATH} className="button" style={Object.assign( {}, styles.button, {color:"#ffffff",background:color,marginRight:5} )}>
               Game Lobby
             </Link>
+            {mode === 'solo' && (<span onClick={playAgain.bind(this)} className="button" style={Object.assign( {}, styles.button, {color:"#ffffff",background:color} )}>
+              Play Again
+            </span>)}         
           </div>)
         }
         {preRoundTimer === 0 && 

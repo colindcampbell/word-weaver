@@ -50,9 +50,21 @@ export default class Header extends Component {
         <IndexLink to={GAMES_PATH} className="posf" style={{left:6,top:6,zIndex:2}}>
           <img src={require('../../assets/wordweaver-logo.svg')} style={{height:40}} alt="WordWeaver"/>
         </IndexLink>
-        <div className="posf" style={{right:6,top:6,zIndex:2}}>{accountLink}
+        <div className="posf df aic" style={{right:6,top:6,zIndex:2,height:30}}>
+          <div style={{marginRight:8,marginTop:4}} onCLick={this.updateAccount.bind(this, {sound:!profile.sound})}>
+            {profile.sound ? (<img src={require('../../assets/sound-on.svg')} style={{width:26}} alt="Sound On"/>) : (<img src={require('../../assets/sound-off.svg')} style={{width:24}} alt="Sound On"/>) }
+          </div>
+          {accountLink}
         </div>   
       </div>
     )
   }
+
+  updateAccount = (newData) =>
+    this.props.firebase
+      .update(`users/${this.props.auth.uid}`, newData)
+      .catch((err) => {
+        console.error('Error updating account', err) // eslint-disable-line no-console
+        // TODO: Display error to user
+      })  
 }
