@@ -618,7 +618,7 @@ export default class GameContainer extends Component {
 
   endStandardGame = (update,gameid,score) => {
     const { auth, firebase, currentGame:{players,mode,createdBy} } = this.props
-    this.setState({gameOverSound:true})
+    this.playSound('gameOverSound')
     update(`${GAMES_PATH}/${gameid}`, {gameOver:true,finalScore:score}).then(() => {
       if (mode === 'solo' && players[auth.uid].highScore < score) {
         update(`/users/${auth.uid}`, {highScore:score})
