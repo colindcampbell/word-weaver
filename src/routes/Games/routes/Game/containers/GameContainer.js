@@ -82,7 +82,8 @@ export default class GameContainer extends Component {
         errorSound: false,
         shuffleSound: false,
         greatSuccessSound: false,
-        gameOverSound: false
+        gameOverSound: false,
+        sounds:['successSound','tickSound','errorSound','shuffleSound','greatSuccessSound','gameOverSound']
       })
     }
   }
@@ -99,7 +100,8 @@ export default class GameContainer extends Component {
         this.setState({
           keyword: currentRound.keyword,
           shuffled: currentRound.shuffled,
-          guess:''
+          guess:'',
+          sounds:['successSound','tickSound','errorSound','shuffleSound','greatSuccessSound','gameOverSound']          
         })
       }
 
@@ -128,7 +130,7 @@ export default class GameContainer extends Component {
           })
         }
         setTimeout(() => { 
-          currentGame.preRoundTimer < 6 && this.setState({tickSound:true})
+          currentGame.preRoundTimer < 6 && this.playSound('tickSound')
           update(`${GAMES_PATH}/${gameid}`, {preRoundTimer:currentGame.preRoundTimer - 1})
         }, 980);
       }
@@ -139,7 +141,7 @@ export default class GameContainer extends Component {
         currentGame.preRoundTimer === 0 && 
         isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
-        currentGame.roundTimer < 6 && this.setState({tickSound:true})
+        currentGame.roundTimer < 6 && this.playSound('tickSound')
         // if (currentGame.roundTimer > 5) {
         //   setTimeout(() => { 
         //     update(`${GAMES_PATH}/${gameid}`, {roundTimer:5})
@@ -154,7 +156,6 @@ export default class GameContainer extends Component {
       if (!currentGame.open && 
         currentGame.roundTimer === 0 && 
         currentGame.preRoundTimer === 0 && 
-        // currentGame.round === this.props.currentGame.round &&
         isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
         if (!currentGame.roundFinished) {
@@ -390,24 +391,24 @@ export default class GameContainer extends Component {
           <div className="df fww aife jcsb">
             {players}
           </div>
-        </div>         
+        </div>
         <div className={currentGame.mode === 'solo' ? "timer-bar posr tac w100 m0a" : "timer-bar duo posr tac w100 m0a"} style={{maxWidth:"1200px"}}>
           <div className="posa" style={{background:"#456",transition:"1000ms linear",right:0,top:2,bottom:0,width:`${(currentGame.roundLength - currentGame.roundTimer)/currentGame.roundLength*100}%`}}></div>
           <span className="posr" style={{fontSize:36,lineHeight:"40px",fontWeight:"bold",color:"#ffffff",zIndex:1}}>{`${Math.floor(currentGame.roundTimer / 60)}:${('0' + currentGame.roundTimer % 60).slice(-2)}`}</span>
         </div>
-        {profile.sound && this.state.successSound && successSound}
-        {profile.sound && this.state.errorSound && errorSound}
-        {profile.sound && this.state.shuffleSound && shuffleSound}
-        {profile.sound && this.state.greatSuccessSound && greatSuccessSound}
-        {profile.sound && this.state.tickSound && tickSound}
-        {profile.sound && this.state.gameOverSound && gameOverSound}
+        {this.state.successSound && successSound}
+        {this.state.errorSound && errorSound}
+        {this.state.shuffleSound && shuffleSound}
+        {this.state.greatSuccessSound && greatSuccessSound}
+        {this.state.tickSound && tickSound}
+        {this.state.gameOverSound && gameOverSound}
       </div>
     )
   }
 
   submitGuess = (gameid, update) => {
     let { guess, currentPlayerKey } = this.state
-    const { auth, currentGame } = this.props
+    const { auth, currentGame, profile } = this.props
     const { currentGamePlayers, currentGameRound } = currentGame,
           currentRound = currentGameRound[Object.keys(currentGameRound)[0]],
           currentPlayer = currentGamePlayers[currentPlayerKey]
@@ -422,7 +423,9 @@ export default class GameContainer extends Component {
           value = currentRound.bank[bankWordKey].value,
           newScore = currentPlayer.score + value,
           newRoundScore = currentPlayer.roundScore + value
-      guess.length === 6 ? this.setState(prevState => ({greatSuccessSound:true})) : this.setState(prevState => ({successSound:true}))
+      if (profile.sound) {
+        guess.length === 6 ? this.playSound('greatSuccessSound') : this.playSound('successSound')
+      }
       update(`${GAME_ROUNDS_PATH}/${Object.keys(currentGameRound)[0]}/taken`, {[bankWordKey]:{word:guess,color:playerColor}})
         .then(() => {
           update(
@@ -439,12 +442,23 @@ export default class GameContainer extends Component {
         })
     }else if(guessTaken.length === 1 && bankWordKey.length === 1){
       // Word is taken
-      this.setState(prevState => ({errorSound:true}))
+      this.playSound('errorSound')
       update(`${GAME_PLAYERS_PATH}/${currentPlayerKey}/notification`,{text:`${guess.toUpperCase()} is taken`,type:'word'})
     }else if (bankWordKey.length === 0) {
       // Not a valid word
-      this.setState(prevState => ({errorSound:true}))
+      this.playSound('errorSound')
       update(`${GAME_PLAYERS_PATH}/${currentPlayerKey}/notification`,{text:`${guess.toUpperCase()} is not a word`,type:'word'})
+    }
+  }
+
+  playSound = (label) => {
+    const {profile} = this.props,
+          newState = {}
+    if (profile.sound) {
+      this.state.sounds.forEach(sound => {
+        newState[sound] = sound === label ? true : false
+      })
+      this.setState(prevState => (newState))
     }
   }
 
