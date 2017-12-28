@@ -108,18 +108,22 @@ exports.populateRoundWords = functions.database.ref('/games/{gid}/round').onWrit
     newKey = snap.key
     return admin.database().ref(`games/${event.params.gid}`).update({
       currentGameRound:{[newKey]:true},
-      preRoundTimer:5,
-      roundTimer:roundTime,
-      roundLength:roundTime,
-      roundFinished:false
     })
   }).then(snap => {
     return admin.database().ref(`games/${event.params.gid}`).once('value')
   }).then(snap => {
-  	const game = snap.val(),
+    const game = snap.val(),
           players = game.players,
           round = game.round,
-          updates = {loading:false,ready:{}}
+          preRoundTimer = game.mode === 'solo' ? 5 : 10,
+          updates = {
+            roundFinished:false,
+            loading:false,
+            ready:{},
+            roundTimer:roundTime,
+            roundLength:roundTime,
+            preRoundTimer:preRoundTimer,
+          }
     if (round > 0) {
       Object.keys(players).forEach(key => { updates.ready[key] = false })
     }
