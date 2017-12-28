@@ -44,6 +44,25 @@ const populates = [
   }}
 )
 export default class GameContainer extends Component {
+
+  constructor(props){
+    super(props)
+    this.state = {
+      keyword:false,
+      shuffled:'LOADING',
+      guess:'',
+      currentPlayerKey:false,
+      scoreSet:false,
+      successSound: false,
+      tickSound: false,
+      errorSound: false,
+      shuffleSound: false,
+      greatSuccessSound: false,
+      gameOverSound: false,
+      sounds:['successSound','tickSound','errorSound','shuffleSound','greatSuccessSound','gameOverSound']      
+    }
+  }
+
   static contextTypes = {
     router: React.PropTypes.object.isRequired
   }
@@ -55,37 +74,6 @@ export default class GameContainer extends Component {
     firebase: PropTypes.object,
     auth: PropTypes.object,
     params: PropTypes.object
-  }
-
-  componentWillMount() {
-    const { currentGame, auth } = this.props
-    this.setState({
-      keyword:false,
-      shuffled:'LOADING',
-      guess:'',
-      currentPlayerKey:false
-    })
-    if (isLoaded(currentGame) && 
-        !isEmpty(currentGame.currentGameRound) && 
-        !isEmpty(currentGame.currentGamePlayers) ){
-      const { currentGameRound } = currentGame,
-            currentRound = currentGameRound[Object.keys(currentGameRound)[0]],
-            { currentGamePlayers } = currentGame
-      let currentPlayerKey = this.getCurrentGamePlayerKey(auth.uid)
-      this.setState({
-        keyword: currentRound.keyword,
-        shuffled: currentRound.shuffled,
-        currentPlayerKey,
-        scoreSet:false,
-        successSound: false,
-        tickSound: false,
-        errorSound: false,
-        shuffleSound: false,
-        greatSuccessSound: false,
-        gameOverSound: false,
-        sounds:['successSound','tickSound','errorSound','shuffleSound','greatSuccessSound','gameOverSound']
-      })
-    }
   }
 
   componentWillReceiveProps(nextProps){
@@ -100,8 +88,6 @@ export default class GameContainer extends Component {
         this.setState({
           keyword: currentRound.keyword,
           shuffled: currentRound.shuffled,
-          guess:'',
-          sounds:['successSound','tickSound','errorSound','shuffleSound','greatSuccessSound','gameOverSound']          
         })
       }
 
@@ -116,10 +102,7 @@ export default class GameContainer extends Component {
       const isOwner = auth.uid === currentGame.createdBy.uid
 
       // Start of first round after the pre round countdown reaches 0. These will only run for the game creator.
-      if (!currentGame.open && 
-        !currentGame.abandoned &&
-        currentGame.preRoundTimer > 0 && 
-        isOwner) {
+      if ( this.gameStatePreRound(currentGame) && isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
         if (currentGame.mode !== 'duo-vs' && currentGamePlayers.hasOwnProperty(this.state.currentPlayerKey) && currentGamePlayers[this.state.currentPlayerKey].roundScore !== 0) {
           // TODO: Update all players
@@ -134,12 +117,9 @@ export default class GameContainer extends Component {
           update(`${GAMES_PATH}/${gameid}`, {preRoundTimer:currentGame.preRoundTimer - 1})
         }, 980);
       }
+
       // Countdown during the playing round
-      if (!currentGame.open && 
-        !currentGame.abandoned &&
-        currentGame.roundTimer > 0 && 
-        currentGame.preRoundTimer === 0 && 
-        isOwner) {
+      if ( this.gameStateRound(currentGame) && isOwner ) {
         const { firebase:{update}, params:{gameid} } = this.props
         currentGame.roundTimer < 6 && this.playSound('tickSound')
         // if (currentGame.roundTimer > 5) {
@@ -147,16 +127,14 @@ export default class GameContainer extends Component {
         //     update(`${GAMES_PATH}/${gameid}`, {roundTimer:5})
         //   }, 980);
         // }else{
-        setTimeout(() => { 
-          update(`${GAMES_PATH}/${gameid}`, {roundTimer:currentGame.roundTimer - 1})
-        }, 980);
+          setTimeout(() => { 
+            update(`${GAMES_PATH}/${gameid}`, {roundTimer:currentGame.roundTimer - 1})
+          }, 980);
         // }
       }
+
       // End of Round
-      if (!currentGame.open && 
-        currentGame.roundTimer === 0 && 
-        currentGame.preRoundTimer === 0 && 
-        isOwner) {
+      if ( this.gameStateRoundEnd(currentGame) && isOwner) {
         const { firebase:{update}, params:{gameid} } = this.props
         if (!currentGame.roundFinished) {
           update(`${GAMES_PATH}/${gameid}`, {roundFinished:true,loading:true}).catch(e => {
@@ -190,6 +168,27 @@ export default class GameContainer extends Component {
         },delay)
       }      
     }
+  }
+
+  gameStatePreRound = (currentGame) => {
+    return !currentGame.open && 
+           !currentGame.abandoned &&
+           currentGame.preRoundTimer > 0 
+  }  
+
+  gameStateRound = (currentGame) => {
+    return !currentGame.roundFinished &&
+           !currentGame.open && 
+           !currentGame.abandoned &&
+           currentGame.roundTimer > 0 && 
+           currentGame.preRoundTimer === 0 &&
+           !currentGame.gameOver
+  }
+
+  gameStateRoundEnd = (currentGame) => {
+    return !currentGame.open && 
+           currentGame.roundTimer === 0 && 
+           currentGame.preRoundTimer === 0
   }
 
   componentDidMount(){
@@ -290,38 +289,38 @@ export default class GameContainer extends Component {
     const tickSound = (<Sound
       url="/tick.mp3"
       playStatus={Sound.status.PLAYING}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'tickSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('tickSound')}
     />)
 
     const gameOverSound = (<Sound
       url="/game-over.mp3"
       playStatus={Sound.status.PLAYING}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'gameOverSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('gameOverSound')}
     />)
 
     const successSound = (<Sound
       url="/success-retro.mp3"
       playStatus={Sound.status.PLAYING}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'successSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('successSound')}
     />)
 
     const errorSound = (<Sound
       url="/error-retro.mp3"
       playStatus={Sound.status.PLAYING}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'errorSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('errorSound')}
     />)
-
+ 
     const greatSuccessSound = (<Sound
       url="/great-success-retro.mp3"
       playStatus={Sound.status.PLAYING}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'greatSuccessSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('greatSuccessSound')}
     />)
 
     const shuffleSound = (<Sound
       url="/shuffle.mp3"
       playStatus={Sound.status.PLAYING}
       volume={60}
-      onFinishedPlaying={this.handleSoundEnd.bind(this, 'shuffleSound')}
+      onFinishedPlaying={() => this.handleSoundEnd('shuffleSound')}
     />)
 
     return(
@@ -331,7 +330,7 @@ export default class GameContainer extends Component {
             {
               !isEmpty(currentRound.bank) && Object.keys(currentRound.bank)
               .map(key => (
-                <div key={key} className={currentRound.bank[key].word.length === 6 ? "df word-container longest" : "df word-container"}>
+                <div key={key} className="df word-container">
                 {
                   currentRound.bank[key].word.split('')
                     .map((letter,index) => (
@@ -354,12 +353,7 @@ export default class GameContainer extends Component {
             }
           </div>
         </div>
-        {(currentGame.preRoundTimer > 0 || currentGame.gameOver || currentGame.open || currentGame.loading || currentGame.roundFinished || currentGame.abandoned) && gameMessage}
-        {!currentGame.roundFinished && 
-         currentGame.roundTimer > 0 &&
-         currentGame.preRoundTimer === 0 &&
-         !currentGame.gameOver &&
-         !currentGame.abandoned &&
+        {this.gameStateRound(currentGame) ?
          (<div className="posr tal m0a" style={{width:290,height:120}}>
             <div className="guess-background dib"></div>
             <div className="guess-background dib"></div>
@@ -381,7 +375,7 @@ export default class GameContainer extends Component {
               )}
             )}
           </div>
-        )}
+        ) : gameMessage}
         <div className="posr m0a w100" style={{maxWidth:"1200px"}}>
         {currentGame.mode === 'duo-vs' &&
           (<div className="posa w100" style={{zIndex:1,bottom:2}}>
