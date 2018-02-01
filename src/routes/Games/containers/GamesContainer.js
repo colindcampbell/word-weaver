@@ -132,30 +132,32 @@ export default class Games extends Component {
     }
 
     return (
-      <div className="df aic acc fww jcc m0a" style={{height:"100vh",width:"100vw",maxWidth:"1200px",overflow:"auto"}}>
-        <div className="w33-r" style={{marginBottom:30}}>
+      <div className="df f1 m0a" style={{marginTop:50,height:"calc(100vh - 50px)",width:"100vw",maxWidth:"1200px",overflow:"auto"}}>
+        <div className="df aic acc fww jcc m0a" style={{minHeight:"min-content",width:"100%"}}>
+          <div className="w33-r" style={{marginBottom:30}}>
+            <div className="w100">
+              <div className="button bgP3" onClick={this.newSubmit.bind(this,'solo')} style={styles.button}>Play Solo</div>
+            </div>
+            <div className="w100 inner-shadow" style={{height:350,overflowY:"auto"}}>
+              {soloLeaderList.reverse()}
+            </div>
+          </div>
+          <div className="w33-r" style={{marginBottom:30}}>
+            <div className="w100">
+              <div className="button bgP2" onClick={this.newSubmit.bind(this,'duo-coop')} style={styles.button}>Play Duo Co-Op</div>
+            </div>
+            {duoLeadersList.reverse()}
+          </div>
+          <div className="w33-r" style={{marginBottom:30}}>
+            <div className="button bgP1" onClick={this.newSubmit.bind(this,'duo-vs')} style={styles.button}>Play Duo Versus</div>
+            {winsLeaderList.reverse()}
+          </div>
           <div className="w100">
-            <div className="button bgP3" onClick={this.newSubmit.bind(this,'solo')} style={styles.button}>Play Solo</div>
+            <div className="w33-r m0a">
+              <div className="button m0a" onClick={this.showHowTo} style={Object.assign( {}, styles.button, styles.outlineButton, {marginBottom:30} )}>How To Play</div>
+            </div>
+            {this.state.showHowTo && (<HowToPlay hideHowTo={this.hideHowTo} />)}
           </div>
-          <div className="w100 inner-shadow" style={{height:350,overflowY:"auto"}}>
-            {soloLeaderList.reverse()}
-          </div>
-        </div>
-        <div className="w33-r" style={{marginBottom:30}}>
-          <div className="w100">
-            <div className="button bgP2" onClick={this.newSubmit.bind(this,'duo-coop')} style={styles.button}>Play Duo Co-Op</div>
-          </div>
-          {duoLeadersList.reverse()}
-        </div>
-        <div className="w33-r" style={{marginBottom:30}}>
-          <div className="button bgP1" onClick={this.newSubmit.bind(this,'duo-vs')} style={styles.button}>Play Duo Versus</div>
-          {winsLeaderList.reverse()}
-        </div>
-        <div className="w100">
-          <div className="w33-r m0a">
-            <div className="button m0a" onClick={this.showHowTo} style={Object.assign( {}, styles.button, styles.outlineButton )}>How To Play</div>
-          </div>
-          {this.state.showHowTo && (<HowToPlay hideHowTo={this.hideHowTo} />)}
         </div>
       </div>
     )

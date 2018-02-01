@@ -170,27 +170,6 @@ export default class GameContainer extends Component {
     }
   }
 
-  gameStatePreRound = (currentGame) => {
-    return !currentGame.open && 
-           !currentGame.abandoned &&
-           currentGame.preRoundTimer > 0 
-  }  
-
-  gameStateRound = (currentGame) => {
-    return !currentGame.roundFinished &&
-           !currentGame.open && 
-           !currentGame.abandoned &&
-           currentGame.roundTimer > 0 && 
-           currentGame.preRoundTimer === 0 &&
-           !currentGame.gameOver
-  }
-
-  gameStateRoundEnd = (currentGame) => {
-    return !currentGame.open && 
-           currentGame.roundTimer === 0 && 
-           currentGame.preRoundTimer === 0
-  }
-
   componentDidMount(){
     document.body.addEventListener('keydown', this.keydownEventListener)
   }
@@ -232,7 +211,7 @@ export default class GameContainer extends Component {
           letterStyles = this.getLetterStyles(shuffled, guess), letterCount = {}
 
     // Total points scored for 2 player games
-    let totalScoreDuo = currentGame.mode === 'duo-vs' || 'duo-coop' ? 
+    let totalScoreDuo = (currentGame.mode === 'duo-vs' || currentGame.mode === 'duo-coop') ? 
       this.getTotalScoreDuo(currentGamePlayers) : false
 
     // Round points scored for 2 player games
@@ -325,8 +304,8 @@ export default class GameContainer extends Component {
 
     return(
       <div className="m0a">
-        <div className="posr" style={{height:"calc(100vh - 198px)",overflowY:"auto"}}>
-          <div className="df fww acc fdc jcfe aifs h100 ovfs posa word-column" style={{maxHeight:860,bottom:0,right:0,left:0}}>
+        <div className="posr" style={{marginTop:50,height:"calc(100vh - 248px)",overflowY:"auto"}}>
+          <div className="df fww acc fdc jcfe aifs h100 ovfs word-column" style={{maxHeight:860,bottom:0,right:0,left:0}}>
             {
               !isEmpty(currentRound.bank) && Object.keys(currentRound.bank)
               .map(key => (
@@ -657,6 +636,27 @@ export default class GameContainer extends Component {
         console.error('error creating new game', err) // eslint-disable-line
       })
   }
+
+  gameStatePreRound = (currentGame) => {
+    return !currentGame.open && 
+           !currentGame.abandoned &&
+           currentGame.preRoundTimer > 0 
+  }  
+
+  gameStateRound = (currentGame) => {
+    return !currentGame.roundFinished &&
+           !currentGame.open && 
+           !currentGame.abandoned &&
+           currentGame.roundTimer > 0 && 
+           currentGame.preRoundTimer === 0 &&
+           !currentGame.gameOver
+  }
+
+  gameStateRoundEnd = (currentGame) => {
+    return !currentGame.open && 
+           currentGame.roundTimer === 0 && 
+           currentGame.preRoundTimer === 0
+  }  
 }
 
 const styles = {
